@@ -1,0 +1,26 @@
+import 'dotenv/config';
+
+export const {
+  NODE_ENV,
+  PORT,
+  JWT_SECRET,
+  DB_NAME_DEV,
+  DB_NAME_PROD,
+  DB_USER,
+  DB_PASSWORD,
+  EMAIL,
+  EMAIL_PASSWORD,
+  GOOGLE_OAUTH_CLIENT_ID,
+  GOOGLE_OAUTH_CLIENT_SECRET,
+  GOOGLE_OAUTH_REFRESH,
+  GOOGLE_REDIRECT_URI,
+  GOOGLE_OAUTH_ACCESS,
+
+  // ORIGIN,
+} = process.env;
+
+export const FRONTEND_URL = NODE_ENV === 'production' ? process.env.FRONTEND_URL_PROD : process.env.FRONTEND_URL_DEV;
+
+// export const ORIGIN = `${BASE_URL}${PORT}`;
+
+// console.log('process.env ORIGIN2: ', process.env.ORIGIN2); Not sure how to preload them, check dotenv-expand package.
