@@ -10,9 +10,7 @@ import {
   GOOGLE_OAUTH_ACCESS,
 } from '../config/VARS.js';
 
-const { OAuth2 } = google.auth;
-
-const oauth2Client = new OAuth2(
+const oauth2Client = new google.auth.OAuth2(
   GOOGLE_OAUTH_CLIENT_ID,
   GOOGLE_OAUTH_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI
@@ -22,7 +20,7 @@ oauth2Client.setCredentials({
   refresh_token: GOOGLE_OAUTH_REFRESH,
 });
 
-export const sendActivationEmail = async (receiverEmail, subject, html) => {
+export const sendVerificationEmail = async (receiverEmail, subject, html) => {
   // Generate the accessToken on the fly
   const accessToken = await oauth2Client.getAccessToken();
 
@@ -48,5 +46,5 @@ export const sendActivationEmail = async (receiverEmail, subject, html) => {
   };
 
   // Send the email and eturn in case of error
-  return transporter.sendMail(mailOptions);
+  return await transporter.sendMail(mailOptions);
 };

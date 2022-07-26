@@ -1,9 +1,9 @@
-export const errorHandler = (err, req, res, next) => {
-  console.log('in errorHandler middleware, error: ', err);
+export const errorHandler = (error, req, res, next) => {
+  console.log('in errorHandler middleware, error: ', error.message);
 
-  const status = err.status || err.response?.status || 500;
+  const status = error.statusCode || error.response?.status || 500;
 
-  const { message, data } = err;
+  const { message, data } = error;
 
   res.status(status).json({ message, data });
 

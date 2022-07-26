@@ -30,7 +30,7 @@ const authValidator = {
       .custom((value, { req }) => {
         return User.findOne({ email: value }).then(user => {
           if (user) {
-            return Promise.reject('Email address already exists.');
+            return Promise.reject('An account with this email address already exists.');
           }
         });
       }),
