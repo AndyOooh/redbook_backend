@@ -70,6 +70,12 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    refreshToken: {
+      type: String,
+    },
+    accessToken: {
+      type: String,
+    },
     friends: {
       type: Array,
       default: [],

@@ -3,7 +3,8 @@ import 'dotenv/config';
 export const {
   NODE_ENV,
   PORT,
-  JWT_SECRET,
+  ACCESS_TOKEN_SECRET,
+  REFRESH_TOKEN_SECRET,
   DB_NAME_DEV,
   DB_NAME_PROD,
   DB_USER,
@@ -19,7 +20,8 @@ export const {
   // ORIGIN,
 } = process.env;
 
-export const FRONTEND_URL = NODE_ENV === 'production' ? process.env.FRONTEND_URL_PROD : process.env.FRONTEND_URL_DEV;
+export const FRONTEND_URL =
+  NODE_ENV === 'production' ? process.env.FRONTEND_URL_PROD : process.env.FRONTEND_URL_DEV;
 
 // export const ORIGIN = `${BASE_URL}${PORT}`;
 

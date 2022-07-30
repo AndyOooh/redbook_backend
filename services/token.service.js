@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config/VARS.js';
 
-export const generateToken = (payload, expiresIn) => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: expiresIn });
+export const generateToken = (payload, secret, expiresIn) => {
+  console.log('in generateToken', payload, secret, expiresIn);
+  return jwt.sign(payload, secret, { expiresIn: expiresIn });
 };
 
 // export const verifyToken = async token => {

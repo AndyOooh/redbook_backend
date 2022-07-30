@@ -4,6 +4,7 @@ import {
   login,
   register,
   resendVerificationEmail,
+  refreshAccessToken
 } from '../../controllers/auth.controller.js';
 import { isAuth } from '../../middleware/isAuth.js';
 import authValidator from './auth.validator.js';
@@ -14,7 +15,8 @@ const router = express.Router();
 
 router.post('/register', authValidator.register, register);
 router.post('/login', login);
+router.get('/refresh', refreshAccessToken);
 router.post('/verify/:token', isAuth, verify);
-router.post('/resendverify', isAuth, resendVerificationEmail);
+router.get('/resendverify', isAuth, resendVerificationEmail);
 
 export default router;

@@ -2,11 +2,80 @@ import bcrypt from 'bcrypt';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 
-import { JWT_SECRET } from '../config/VARS.js';
+import { ACCESS_TOKEN_SECRET, NODE_ENV, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
 import { User } from '../models/user.model.js';
 import { sendVerificationEmail } from '../services/email.service.js';
 import { generateToken } from '../services/token.service.js';
-import { verificationEmailOPtions } from './auth.helpers.js';
+import { createUserObject, verificationEmailOPtions } from './auth.helpers.js';
+
+export const refreshAccessToken = async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.refresh_token) return res.sendStatus(401);
+  const refreshToken = cookies.refresh_token;
+  console.log(' in refreshAccessToken refreshToken999', refreshToken);
+  res.clearCookie('refresh_token', {
+    httpOnly: true,
+    // sameSite: 'None',
+    // secure: true
+  });
+
+  const existingUser = await User.findOne({ refreshToken }).exec();
+
+  // Detected refresh token reuse!
+  if (!existingUser) {
+    console.log('no user with this refresh token, token will be deleted');
+    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, decoded) => {
+      if (err) return res.sendStatus(403); //Forbidden
+      // Delete refresh tokens of hacked user
+      const hackedUser = await User.findOne({ username: decoded.username }).exec();
+      hackedUser.refreshToken = '';
+      const result = await hackedUser.save();
+    });
+    return res.sendStatus(403); //Forbidden
+  }
+
+  // const newRefreshTokenArray = existingUser.refreshToken.filter(rt => rt !== refreshToken);
+
+  // evaluate jwt
+  jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, decoded) => {
+    if (err) {
+      // expired refresh token
+      console.log('expired refreshToken: ', err);
+      existingUser.refreshToken = '';
+      const result = await existingUser.save();
+    }
+    console.log('decoded', decoded);
+    if (err || existingUser.email !== decoded.email) return res.sendStatus(403);
+    console.log('after......');
+
+    // Refresh token was still valid
+    // const roles = Object.values(existingUser.roles);
+    const newAccessToken = jwt.sign({ email: existingUser.email }, ACCESS_TOKEN_SECRET, {
+      expiresIn: '2h',
+    });
+
+    const newRefreshToken = jwt.sign({ email: existingUser.email }, REFRESH_TOKEN_SECRET, {
+      expiresIn: '2d',
+    });
+
+    // Saving refreshToken with current user
+    existingUser.refreshToken = newRefreshToken;
+    const savedUser = await existingUser.save();
+    console.log('in refreshToken, savedUser', savedUser);
+
+    // Creates Secure Cookie with new refresh token
+    res.cookie('refresh_token', newRefreshToken, {
+      httpOnly: true,
+      // secure: true,
+      // sameSite: 'None',
+      // maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    const { id, rest } = createUserObject(savedUser._doc);
+
+    res.json({ user: { id, ...rest }, accessToken: newAccessToken });
+  });
+};
 
 // ---------------------------------------- register ----------------------------------------
 // @desc Create new user
@@ -27,40 +96,34 @@ export const register = async (req, res, next) => {
 
   const { first_name, last_name, email, password } = req.body;
 
+  const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
+  const newAccessToken = generateToken({ email }, ACCESS_TOKEN_SECRET, '7d');
+
   // Save user to database
   try {
     const createdUser = await User.create({
       ...req.body,
       username: first_name + last_name + Math.random().toString(),
       password: await bcrypt.hash(password, 10),
+      refreshToken: newRefreshToken,
     });
 
     console.log('createdUser: ', createdUser);
 
-    // Destructure: We need id and can send 'rest' object in reponse without password etc.
-    const {
-      _id: id,
-      password: createdPassword,
-      details,
-      createdAt,
-      updatedAt,
-      __v,
-      ...rest
-    } = createdUser._doc;
-
-    console.log('past destrict createdUser');
+    const { id, rest } = createUserObject(createdUser._doc);
 
     // Send verification email
     const { subject, html } = verificationEmailOPtions(id, first_name);
     await sendVerificationEmail(email, subject, html);
 
-    console.log('past sendVerificationEmail');
+    res.cookie('refresh_token', newRefreshToken, {
+      httpOnly: true,
+    });
 
     // Send response
-    res.status(201).json({
-      id,
-      token: generateToken({ id, email }, '7d'),
-      ...rest,
+    res.status(200).json({
+      user: { id, ...rest },
+      accessToken: newAccessToken,
     });
   } catch (error) {
     // console.log('in register, error:', error.response.data.error_description);
@@ -75,6 +138,8 @@ export const register = async (req, res, next) => {
 // @route POST /api/auth/login
 // @access Public
 export const login = async (req, res, next) => {
+  console.log('in login req.body:', req.body);
+
   const { email, password: loginPassword } = req.body;
   if (!email || !loginPassword) {
     const error = new Error('All fields are required');
@@ -92,17 +157,33 @@ export const login = async (req, res, next) => {
       return next(error);
     }
 
-    const { _id: id, password, ...rest } = existingUser._doc;
+    // const { _id: id, password, createdAt, ...rest } = existingUser._doc; //before refactoring to auth.helpers for use in register and refresh
+    const { id, password, rest } = createUserObject(existingUser._doc);
+
     const isMatch = await bcrypt.compare(loginPassword, password);
     if (!isMatch) {
       const error = new Error('Invalid password');
       error.statusCode = 400;
       return next(error);
     }
+
+    const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
+    const newAccessToken = generateToken({ email }, ACCESS_TOKEN_SECRET, '7d');
+
+    existingUser.refreshToken = newRefreshToken;
+    await existingUser.save();
+
+    res.cookie('refresh_token', newRefreshToken, {
+      httpOnly: true,
+      // secure: NODE_ENV === 'production' ? true : false,
+      // secure: false,
+      // sameSite: 'None',
+      // maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
-      id,
-      token: generateToken({ id, email }, '7d'),
-      ...rest,
+      user: { id, ...rest },
+      accessToken: newAccessToken,
     });
   } catch (error) {
     return next(error);
@@ -123,7 +204,7 @@ export const verify = async (req, res, next) => {
   console.log('userId', userId);
 
   try {
-    const decodedToken = await jwt.verify(verificationToken, JWT_SECRET);
+    const decodedToken = await jwt.verify(verificationToken, REFRESH_TOKEN_SECRET);
     console.log('decoded', decodedToken);
     if (decodedToken.id !== userId) {
       const error = new Error('You are not uthorized to verify this account');
@@ -153,6 +234,7 @@ export const verify = async (req, res, next) => {
 // @route POST /api/auth/resendverify
 // @access Private
 export const resendVerificationEmail = async (req, res, next) => {
+  console.log('req.user in resendVerificationEmail666666', req.user);
   try {
     const { id } = req.user;
     const { email, first_name, verified } = await User.findById(id);
@@ -172,24 +254,6 @@ export const resendVerificationEmail = async (req, res, next) => {
     return next(error);
   }
 };
-
-// export const findUser = async (req, res, next) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await User.findOne({ email }).select("-password");
-//     if (!user) {
-//       return res.status(400).json({
-//         message: "Account does not exists.",
-//       });
-//     }
-//     return res.status(200).json({
-//       email: user.email,
-//       picture: user.picture,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 
 // export const sendResetPasswordCode = async (req, res, next) => {
 //   try {
