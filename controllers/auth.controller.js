@@ -8,6 +8,33 @@ import { sendVerificationEmail } from '../services/email.service.js';
 import { generateToken } from '../services/token.service.js';
 import { createUserObject, verificationEmailOPtions } from './auth.helpers.js';
 
+
+// ---------------------------------------- /logout ----------------------------------------
+// @desc Log a user out
+// @route POST /api/auth/logout
+// @access Public
+export const logout = async (req, res) => {
+  // On client, also delete the accessToken
+
+  const { refresh_token } = req.cookies;
+  if (!refresh_token) return res.sendStatus(204); //No content
+
+  // Is refreshToken in db?
+  const existingUser = await User.findOne({ refresh_token }).exec();
+  if (existingUser) {
+    existingUser.refreshToken = null;
+  }
+
+  await existingUser.save();
+
+  res.clearCookie('refresh_token', { httpOnly: true });
+  res.sendStatus(204);
+};
+
+// ---------------------------------------- /refresh ----------------------------------------
+// @desc Refresh user access token
+// @route GET /api/auth/refresh
+// @access Private
 export const refreshAccessToken = async (req, res) => {
   const cookies = req.cookies;
   if (!cookies?.refresh_token) return res.sendStatus(401);
@@ -50,13 +77,12 @@ export const refreshAccessToken = async (req, res) => {
 
     // Refresh token was still valid
     // const roles = Object.values(existingUser.roles);
-    const newAccessToken = jwt.sign({ email: existingUser.email }, ACCESS_TOKEN_SECRET, {
-      expiresIn: '2h',
-    });
-
-    const newRefreshToken = jwt.sign({ email: existingUser.email }, REFRESH_TOKEN_SECRET, {
-      expiresIn: '2d',
-    });
+    const newAccessToken = generateToken({ email: existingUser.email }, ACCESS_TOKEN_SECRET, '2h');
+    const newRefreshToken = generateToken(
+      { email: existingUser.email },
+      REFRESH_TOKEN_SECRET,
+      '2d'
+    );
 
     // Saving refreshToken with current user
     existingUser.refreshToken = newRefreshToken;
@@ -77,11 +103,10 @@ export const refreshAccessToken = async (req, res) => {
   });
 };
 
-// ---------------------------------------- register ----------------------------------------
+// ---------------------------------------- /register ----------------------------------------
 // @desc Create new user
 // @route POST /api/auth/register
 // @access Public
-// TODO return entire user object as done in login
 export const register = async (req, res, next) => {
   // Error handling -------------------------------------------------------
   const errors = validationResult(req);
@@ -133,7 +158,7 @@ export const register = async (req, res, next) => {
   }
 };
 
-// ---------------------------------------- login ----------------------------------------
+// ---------------------------------------- /login ----------------------------------------
 // @desc Log user in
 // @route POST /api/auth/login
 // @access Public
@@ -215,7 +240,7 @@ export const verify = async (req, res, next) => {
 
     const user = await User.findById(decodedToken.id);
     console.log('user in verify: ', user);
-    if (user.verified) {
+    if (user?.verified) {
       const error = new Error('This email is already verified');
       error.statusCode = 400;
       return next(error);
