@@ -8,23 +8,27 @@ import Post from '../models/post.model.js';
 // @route POST /api/posts
 // @access Private
 export const createPost = async (req, res, next) => {
+  console.log('in createPost');
   console.log('req.body: ', req.body);
-  const { title, content } = req.body;
-  if (!title || !content) {
-    res.status(400);
-    const error = new Error('Title and content are required');
-    next(error);
-  }
-  const createdPost = await Post.create({
-    title,
-    content,
-    // user: req.user._id,
-  });
+  console.log('req.files: ', req.files);
+  console.log('req.file: ', req.file);
 
-  return res.status(201).json({
-    message: 'Post created successfully',
-    data: createdPost,
-  });
+  // const { title, content } = req.body;
+  // if (!title || !content) {
+  //   res.status(400);
+  //   const error = new Error('Title and content are required');
+  //   next(error);
+  // }
+  // const createdPost = await Post.create({
+  //   title,
+  //   content,
+  //   // user: req.user._id,
+  // });
+
+  // return res.status(201).json({
+  //   message: 'Post created successfully',
+  //   data: createdPost,
+  // });
 };
 
 // @desc get all posts

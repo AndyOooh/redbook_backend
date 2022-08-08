@@ -14,6 +14,7 @@ app.use(cors(corsConfig));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+// app.use(multiUploader); // Prob best to only use oon routes which expect multi-form data.
 
 //middleware for cookies
 app.use(cookieParser());

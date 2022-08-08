@@ -20,7 +20,7 @@ oauth2Client.setCredentials({
   refresh_token: GOOGLE_OAUTH_REFRESH,
 });
 
-export const sendVerificationEmail = async (receiverEmail, subject, html) => {
+export const sendEmail = async (receiverEmail, subject, html) => {
   // Generate the accessToken on the fly
   const accessToken = await oauth2Client.getAccessToken();
 

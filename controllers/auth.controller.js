@@ -4,10 +4,16 @@ import jwt from 'jsonwebtoken';
 
 import { ACCESS_TOKEN_SECRET, NODE_ENV, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
 import { User } from '../models/user.model.js';
-import { sendVerificationEmail } from '../services/email.service.js';
-import { generateToken } from '../services/token.service.js';
-import { createUserObject, verificationEmailOPtions } from './auth.helpers.js';
+import { Code } from '../models/code.model.js';
 
+import { sendEmail } from '../services/email.service.js';
+import { generateToken } from '../services/token.service.js';
+import {
+  createUserObject,
+  generateCode,
+  resetCodeEmailOptions,
+  verificationEmailOPtions,
+} from './auth.helpers.js';
 
 // ---------------------------------------- /logout ----------------------------------------
 // @desc Log a user out
@@ -77,17 +83,13 @@ export const refreshAccessToken = async (req, res) => {
 
     // Refresh token was still valid
     // const roles = Object.values(existingUser.roles);
-    const newAccessToken = generateToken({ email: existingUser.email }, ACCESS_TOKEN_SECRET, '2h');
-    const newRefreshToken = generateToken(
-      { email: existingUser.email },
-      REFRESH_TOKEN_SECRET,
-      '2d'
-    );
+    const { id, email } = existingUser;
+    const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '2d');
 
     // Saving refreshToken with current user
     existingUser.refreshToken = newRefreshToken;
     const savedUser = await existingUser.save();
-    console.log('in refreshToken, savedUser', savedUser);
+    console.log('in refreshToken, savedUser');
 
     // Creates Secure Cookie with new refresh token
     res.cookie('refresh_token', newRefreshToken, {
@@ -97,7 +99,8 @@ export const refreshAccessToken = async (req, res) => {
       // maxAge: 24 * 60 * 60 * 1000,
     });
 
-    const { id, rest } = createUserObject(savedUser._doc);
+    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '2h');
+    const { rest } = createUserObject(savedUser._doc);
 
     res.json({ user: { id, ...rest }, accessToken: newAccessToken });
   });
@@ -122,7 +125,6 @@ export const register = async (req, res, next) => {
   const { first_name, last_name, email, password } = req.body;
 
   const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
-  const newAccessToken = generateToken({ email }, ACCESS_TOKEN_SECRET, '7d');
 
   // Save user to database
   try {
@@ -139,11 +141,13 @@ export const register = async (req, res, next) => {
 
     // Send verification email
     const { subject, html } = verificationEmailOPtions(id, first_name);
-    await sendVerificationEmail(email, subject, html);
+    await sendEmail(email, subject, html);
 
     res.cookie('refresh_token', newRefreshToken, {
       httpOnly: true,
     });
+
+    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '7d');
 
     // Send response
     res.status(200).json({
@@ -185,6 +189,8 @@ export const login = async (req, res, next) => {
     // const { _id: id, password, createdAt, ...rest } = existingUser._doc; //before refactoring to auth.helpers for use in register and refresh
     const { id, password, rest } = createUserObject(existingUser._doc);
 
+    console.log('rest: ', rest);
+
     const isMatch = await bcrypt.compare(loginPassword, password);
     if (!isMatch) {
       const error = new Error('Invalid password');
@@ -193,7 +199,7 @@ export const login = async (req, res, next) => {
     }
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
-    const newAccessToken = generateToken({ email }, ACCESS_TOKEN_SECRET, '7d');
+    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '7d');
 
     existingUser.refreshToken = newRefreshToken;
     await existingUser.save();
@@ -224,10 +230,6 @@ export const verify = async (req, res, next) => {
   const userId = req.user.id;
   const verificationToken = req.params.token;
 
-  console.log('verificationToken backend: ', verificationToken);
-
-  console.log('userId', userId);
-
   try {
     const decodedToken = await jwt.verify(verificationToken, REFRESH_TOKEN_SECRET);
     console.log('decoded', decodedToken);
@@ -241,7 +243,7 @@ export const verify = async (req, res, next) => {
     const user = await User.findById(decodedToken.id);
     console.log('user in verify: ', user);
     if (user?.verified) {
-      const error = new Error('This email is already verified');
+      const error = new Error('This account is already verified');
       error.statusCode = 400;
       return next(error);
     }
@@ -269,10 +271,10 @@ export const resendVerificationEmail = async (req, res, next) => {
       return next(error);
     }
     const { subject, html } = verificationEmailOPtions(id, first_name);
-    await sendVerificationEmail(email, subject, html);
+    await sendEmail(email, subject, html);
 
     return res.status(200).json({
-      message: 'Email verification link has been sent to your email.',
+      message: 'A verification link has been sent to your email.',
     });
   } catch (error) {
     // res.status(500).json({ message: error.message });
@@ -280,50 +282,72 @@ export const resendVerificationEmail = async (req, res, next) => {
   }
 };
 
-// export const sendResetPasswordCode = async (req, res, next) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await User.findOne({ email }).select("-password");
-//     await Code.findOneAndRemove({ user: user._id });
-//     const code = generateCode(5);
-//     const savedCode = await new Code({
-//       code,
-//       user: user._id,
-//     }).save();
-//     sendResetCode(user.email, user.first_name, code);
-//     return res.status(200).json({
-//       message: "Email reset code has been sent to your email",
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+export const findUser = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email }).select('-password');
+    if (!user) {
+      return res.status(400).json({
+        message: 'No account found with that email.',
+      });
+    }
+    return res.status(200).json({
+      email: user.email,
+      picture: user.picture,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-// export const validateResetCode = async (req, res, next) => {
-//   try {
-//     const { email, code } = req.body;
-//     const user = await User.findOne({ email });
-//     const Dbcode = await Code.findOne({ user: user._id });
-//     if (Dbcode.code !== code) {
-//       return res.status(400).json({
-//         message: "Verification code is wrong..",
-//       });
-//     }
-//     return res.status(200).json({ message: "ok" });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+export const sendResetPasswordCode = async (req, res, next) => {
+  const { email } = req.body;
+  console.log('email in sendResetPasswordCode: ', email);
+  try {
+    const user = await User.findOne({ email }).select('-password');
+    console.log('user in sendResetPasswordCode: ', user);
+    const code = generateCode(5);
+    const newCode = await Code.findOneAndUpdate(
+      { user: user._id },
+      { code: code },
+      { upsert: true, new: true }
+    );
 
-// export const changePassword = async (req, res, next) => {
-//   const { email, password } = req.body;
+    const { subject, html } = resetCodeEmailOptions(user.first_name, newCode.code);
+    await sendEmail(email, subject, html);
+    return res.status(200).json({
+      message: 'Email reset code has been sent to your email',
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-//   const cryptedPassword = await bcrypt.hash(password, 12);
-//   await User.findOneAndUpdate(
-//     { email },
-//     {
-//       password: cryptedPassword,
-//     }
-//   );
-//   return res.status(200).json({ message: "ok" });
-// };
+export const validateResetCode = async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+    const user = await User.findOne({ email });
+    const existingCode = await Code.findOne({ user: user._id });
+    if (existingCode.code !== code) {
+      return res.status(400).json({
+        message: 'Verification code is wrong..',
+      });
+    }
+    return res.status(200).json({ message: 'ok' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  const hashedPw = await bcrypt.hash(password, 12);
+  await User.findOneAndUpdate(
+    { email },
+    {
+      password: hashedPw,
+    }
+  );
+  return res.status(200).json({ message: 'ok' });
+};

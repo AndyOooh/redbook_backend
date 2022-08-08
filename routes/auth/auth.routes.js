@@ -6,6 +6,10 @@ import {
   resendVerificationEmail,
   refreshAccessToken,
   logout,
+  findUser,
+  sendResetPasswordCode,
+  validateResetCode,
+  changePassword,
 } from '../../controllers/auth.controller.js';
 import { isAuth } from '../../middleware/isAuth.js';
 import authValidator from './auth.validator.js';
@@ -19,7 +23,12 @@ router.post('/login', login);
 router.post('/logout', logout);
 
 router.get('/refresh', refreshAccessToken);
-router.post('/verify/:token', isAuth, verify);
-router.get('/resendverify', isAuth, resendVerificationEmail);
+router.patch('/verify/:token', isAuth, verify);
+router.post('/resendverify', isAuth, resendVerificationEmail);
+
+router.post('/findUser', findUser);
+router.post('/resetPassword', sendResetPasswordCode);
+router.post('/validateResetCode', validateResetCode);
+router.post('/changePassword', changePassword);
 
 export default router;

@@ -40,7 +40,8 @@ const userSchema = new Schema(
     picture: {
       type: String,
       trim: true,
-      default: 'https://res.cloudinary.com/', // Need the real path
+      default:
+        'https://res.cloudinary.com/dmhcnhtng/image/upload/v1643044376/avatars/default_pic_jeaybr.png', // Need the real path
     },
     cover: {
       type: String,
@@ -149,7 +150,5 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
-
-// export default mongoose.model('User', userSchema);
 
 export const User = mongoose.model('User', userSchema);

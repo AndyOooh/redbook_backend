@@ -6,11 +6,13 @@ import {
   getPosts,
   updatePost,
 } from '../controllers/posts.controller.js';
+
 import { isAuth } from '../middleware/isAuth.js';
+import { multiUploader } from '../config/multer.js';
 
 const router = express.Router();
 
-router.route('/').get(isAuth, getPosts).post(createPost);
+router.route('/').get(isAuth, getPosts).post(multiUploader, createPost);
 
 router.route('/:id').get(getPost).put(updatePost).delete(deletePost);
 

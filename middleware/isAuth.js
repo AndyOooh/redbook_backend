@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { REFRESH_TOKEN_SECRET } from '../config/VARS.js';
+import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
 import { errorCreator } from '../services/error.service.js';
 
 export const isAuth = async (req, res, next) => {
@@ -13,9 +13,11 @@ export const isAuth = async (req, res, next) => {
     return next(error);
   }
 
+
   try {
-    const token = authHeader.split(' ')[1];
-    const decodedToken = await jwt.verify(token, REFRESH_TOKEN_SECRET);
+    const accessToken = authHeader.split(' ')[1];
+    const decodedToken = await jwt.verify(accessToken, ACCESS_TOKEN_SECRET);
+    // const decodedToken = await jwt.verify(token, REFRESH_TOKEN_SECRET);
     console.log('decodedToken', decodedToken);
     req.user = decodedToken;
     next();
