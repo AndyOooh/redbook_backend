@@ -18,6 +18,9 @@ export const {
   GOOGLE_OAUTH_ACCESS,
   FRONTEND_URL_PROD,
   FRONTEND_URL_DEV,
+  CLOUD_NAME,
+  CLOUD_API_KEY,
+  CLOUD_API_SECRET,
 
   // ORIGIN,
 } = process.env;

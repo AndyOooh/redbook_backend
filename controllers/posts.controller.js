@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from 'uuid';
+
+import { uploadToCloudinary } from '../config/cloudinary.js';
 import Post from '../models/post.model.js';
 
 // TODO use asynchandler or create one
@@ -12,23 +15,35 @@ export const createPost = async (req, res, next) => {
   console.log('req.body: ', req.body);
   console.log('req.files: ', req.files);
   console.log('req.file: ', req.file);
+  console.log('req.user: ', req.user);
 
-  // const { title, content } = req.body;
-  // if (!title || !content) {
-  //   res.status(400);
-  //   const error = new Error('Title and content are required');
-  //   next(error);
-  // }
-  // const createdPost = await Post.create({
-  //   title,
-  //   content,
-  //   // user: req.user._id,
-  // });
+  const { user } = req;
 
-  // return res.status(201).json({
-  //   message: 'Post created successfully',
-  //   data: createdPost,
-  // });
+  const postId = uuidv4();
+  console.log('postId: ', postId);
+
+  try {
+    const pathArray = req.files?.images?.map(image => image.path);
+
+    const folder = `${user.id}/posts/${postId}`;
+    let images = [];
+
+    // Upload images to Cloudinary
+    if (pathArray && pathArray.length > 0) {
+      for (let i = 0; i < pathArray.length; i++) {
+        const result = await uploadToCloudinary(pathArray[i], folder);
+        images.push(result.secure_url);
+      }
+    }
+    console.log('images: ', images);
+
+    // Create post
+    const post = await new Post({ ...req.body, _id: postId, user: user.id, images: images }).save(); 
+    console.log('poståååååååååååååååååååå: ', post);
+    res.json(post);
+  } catch (error) {
+    console.log('error: ', error);
+  }
 };
 
 // @desc get all posts
