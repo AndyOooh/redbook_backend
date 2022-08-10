@@ -18,7 +18,10 @@ const postsSchema = new Schema(
       ref: 'User',
       required: true,
     },
-    background: String,
+    background: {
+      type: String || null,
+      default: null,
+    },
     comments: [
       {
         comment: {
