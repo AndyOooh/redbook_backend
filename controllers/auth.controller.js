@@ -45,7 +45,6 @@ export const refreshAccessToken = async (req, res) => {
   const cookies = req.cookies;
   if (!cookies?.refresh_token) return res.sendStatus(401);
   const refreshToken = cookies.refresh_token;
-  console.log(' in refreshAccessToken refreshToken999', refreshToken);
   res.clearCookie('refresh_token', {
     httpOnly: true,
     // sameSite: 'None',
@@ -188,8 +187,6 @@ export const login = async (req, res, next) => {
 
     // const { _id: id, password, createdAt, ...rest } = existingUser._doc; //before refactoring to auth.helpers for use in register and refresh
     const { id, password, rest } = createUserObject(existingUser._doc);
-
-    console.log('rest: ', rest);
 
     const isMatch = await bcrypt.compare(loginPassword, password);
     if (!isMatch) {

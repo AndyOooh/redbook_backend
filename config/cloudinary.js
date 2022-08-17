@@ -8,21 +8,4 @@ cloudinary.config({
   api_secret: CLOUD_API_SECRET,
 });
 
-// export default cloudinary;
-
-export const uploadToCloudinary = async (imagePath, folder) => {
-  const options = {
-    use_filename: true,
-    unique_filename: false,
-    overwrite: true,
-
-    folder: 'redbook/users/' + folder,
-  };
-
-  try {
-    const result = await cloudinary.uploader.upload(imagePath, options);
-    return result;
-  } catch (error) {
-    console.log('error: ', error);
-  }
-};
+export default cloudinary;

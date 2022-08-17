@@ -24,12 +24,14 @@ const postsSchema = new Schema(
     },
     comments: [
       {
-        comment: {
+        _id: String,
+        text: {
           type: String,
         },
-        image: {
-          type: String,
-        },
+        images: [{
+          id: String,
+          url: String,
+        }],
         commentBy: {
           type: ObjectId,
           ref: 'User',

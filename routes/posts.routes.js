@@ -4,7 +4,7 @@ import {
   deletePost,
   getPost,
   getPosts,
-  updatePost,
+  createComment,
 } from '../controllers/posts.controller.js';
 
 import { isAuth } from '../middleware/isAuth.js';
@@ -14,6 +14,6 @@ const router = express.Router();
 
 router.route('/').get(isAuth, getPosts).post(isAuth, multiUploader, createPost);
 
-router.route('/:id').get(getPost).put(updatePost).delete(deletePost);
+router.route('/:id').get(getPost).put(isAuth, multiUploader, createComment).delete(deletePost);
 
 export default router;

@@ -1,15 +1,21 @@
+import { User } from '../models/user.model.js';
 
+// @desc get a user
+// @route GET /api/users/:id
+// @access Public
+export const getUser = async (req, res, next) => {
+  const { id: userId } = req.params;
 
-// @desc Update user
-// @route PUT /api/user:id
-// @access Private
-
-
-
-
-// @desc delete user
-// @route PUT /api/user:id
-// @access Private
+  try {
+    const user = await User.findById(userId)
+      .select('first_name last_name username picture gender')
+      .exec();
+    res.status(200).json(user);
+  } catch (error) {
+    console.log('error in getUser: ', error);
+    next(error);
+  }
+};
 
 // export const getCurrentUser = async (req, res, next) => {
 //     const {id} = req.user;
@@ -32,10 +38,10 @@
 
 // export const getUsers = async (req, res, next) => {
 //     console.log('req.body in getUsers', req.body);
-  
+
 //     try {
 //       const users = await User.find();
-  
+
 //       console.log('users', users);
 //       res.status(200).json(users);
 //     } catch (error) {
