@@ -5,3 +5,14 @@
 ##TODO
 - README.md
 - asyncHandler and errorController in controllers
+
+
+###Features
+
+###Main stack
+
+###Packages
+
+###Challenges
+
+###Notes
