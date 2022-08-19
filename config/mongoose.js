@@ -24,3 +24,5 @@ export const db_connect = async () => {
     // next(error);
   }
 };
+
+// export const defaultDeselects = ['-password', '-__v']; Was meant instead of createUserObject in auth.helpers.js

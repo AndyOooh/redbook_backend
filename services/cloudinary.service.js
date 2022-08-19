@@ -16,7 +16,7 @@ const upload = async (imagePath, folder) => {
   }
 };
 
-export const uploadToCloudinary = async (files, userId, postId, commentId) => {
+export const uploadToCloudinary = async (files, username, postId, commentId) => {
   const pathArray = files.images?.map(image => image.path);
 
   if (!pathArray?.length > 0) {
@@ -25,8 +25,8 @@ export const uploadToCloudinary = async (files, userId, postId, commentId) => {
   }
 
   const folder = commentId
-    ? `${userId}/posts/${postId}/comments/${commentId}`
-    : `${userId}/posts/${postId}`;
+    ? `${username}/posts/${postId}/comments/${commentId}`
+    : `${username}/posts/${postId}`;
 
   let images = [];
 

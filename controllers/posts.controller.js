@@ -24,7 +24,7 @@ export const createPost = async (req, res, next) => {
   console.log('checkedBackground: ', checkedBackground);
 
   try {
-    const images = await uploadToCloudinary(files, user.id, postId);
+    const images = await uploadToCloudinary(files, user.username, postId);
 
     // Create post
     const post = await new Post({
@@ -57,7 +57,7 @@ export const createComment = async (req, res, next) => {
   console.log('files: ', files);
 
   try {
-    const images = await uploadToCloudinary(files, user.id, postId, commentId);
+    const images = await uploadToCloudinary(files, user.username, postId, commentId);
 
     const comment = { _id: commentId, text, images, commentBy: user.id };
 

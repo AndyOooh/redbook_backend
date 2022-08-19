@@ -82,7 +82,7 @@ export const refreshAccessToken = async (req, res) => {
 
     // Refresh token was still valid
     // const roles = Object.values(existingUser.roles);
-    const { id, email } = existingUser;
+    const { id, email, username } = existingUser;
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '2h');
 
     // Saving refreshToken with current user
@@ -98,7 +98,7 @@ export const refreshAccessToken = async (req, res) => {
       // maxAge: 24 * 60 * 60 * 1000,
     });
 
-    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '2h' );
+    const newAccessToken = generateToken({ username, id }, ACCESS_TOKEN_SECRET, '2h' );
     const { rest } = createUserObject(savedUser._doc);
 
     res.json({ user: { id, ...rest }, accessToken: newAccessToken });
@@ -146,7 +146,7 @@ export const register = async (req, res, next) => {
       httpOnly: true,
     });
 
-    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '7d');
+    const newAccessToken = generateToken({ username: rest.username, id }, ACCESS_TOKEN_SECRET, '7d');
 
     // Send response
     res.status(200).json({
