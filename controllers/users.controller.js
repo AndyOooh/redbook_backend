@@ -19,6 +19,11 @@ export const getUser = async (req, res, next) => {
       // const foundUser = await User.findById(userId).exec();
       const foundUser = await User.findOne({ username: userId }).exec();
       console.log('foundUser', foundUser);
+      if (!foundUser) {
+        return res.status(404).json({
+          message: 'User not found',
+        });
+      }
       const { id, rest } = createUserObject(foundUser._doc);
       user = { id, ...rest };
     } else {

@@ -49,7 +49,7 @@ export const createComment = async (req, res, next) => {
   console.log('req.body: ', req.body);
 
   const { user, files } = req;
-  const {text} = req.body;
+  const { text } = req.body;
   const postId = req.params.id;
   const commentId = uuidv4();
 
@@ -77,8 +77,17 @@ export const createComment = async (req, res, next) => {
 // @access Public
 export const getPosts = async (req, res, next) => {
   console.log('in getPosts');
+  let filter = {};
+  console.log('req.query in getPosts: ', req.query);
+
+  if (req.query) {
+    filter = { ...filter, ...req.query };
+  }
+
+  console.log('filter: ', filter);
+
   try {
-    const posts = await Post.find()
+    const posts = await Post.find(filter)
       .populate('user', 'first_name last_name picture username gender')
       .sort({ createdAt: -1 })
       .exec();
