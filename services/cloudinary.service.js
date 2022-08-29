@@ -1,11 +1,19 @@
 import cloudinary from '../config/cloudinary.js';
+import { NODE_ENV } from '../config/VARS.js';
 
 const upload = async (imagePath, folder) => {
+  const baseFolder = NODE_ENV === 'development' ? 'redbook/development/users/' : 'redbook/users/';
+
   const options = {
     use_filename: true,
     unique_filename: false,
     overwrite: true,
-    folder: 'redbook/users/' + folder,
+    // folder: 'redbook/users/' + folder,
+    
+    // New after watching cloudinary video
+    folder: baseFolder + folder,
+    format: 'auto',
+    quality: 'auto',
   };
 
   try {
@@ -16,7 +24,8 @@ const upload = async (imagePath, folder) => {
   }
 };
 
-export const uploadToCloudinary = async (files, username, postId, commentId) => {
+export const uploadToCloudinary = async ({ files, username, type, postId, commentId }) => {
+  console.log('files in cloidiagry: ', files);
   const pathArray = files.images?.map(image => image.path);
 
   if (!pathArray?.length > 0) {
@@ -26,7 +35,13 @@ export const uploadToCloudinary = async (files, username, postId, commentId) => 
 
   const folder = commentId
     ? `${username}/posts/${postId}/comments/${commentId}`
-    : `${username}/posts/${postId}`;
+    : postId
+    ? `${username}/posts/${postId}`
+    : type === 'profile'
+    ? `${username}/profile`
+    : type === 'cover'
+    ? `${username}/cover`
+    : ``;
 
   let images = [];
 
@@ -36,7 +51,8 @@ export const uploadToCloudinary = async (files, username, postId, commentId) => 
       for (let i = 0; i < pathArray.length; i++) {
         const uploadedImages = await upload(pathArray[i], folder);
         console.log('images: ', uploadedImages);
-        images.push({ url: uploadedImages.secure_url, id: uploadedImages.asset_id });
+        // images.push({ url: uploadedImages.secure_url, id: uploadedImages.asset_id });
+        images.push(uploadedImages);
       }
     }
   } catch (error) {

@@ -1,14 +1,15 @@
 import express from 'express';
-import { getUser, getProfile } from '../controllers/users.controller.js';
+import { multiUploader } from '../config/multer.js';
+import { getUser, getProfile, updateProfilePhoto } from '../controllers/users.controller.js';
 
 import { isAuth } from '../middleware/isAuth.js';
-// import { multiUploader } from '../config/multer.js';
 
 const router = express.Router();
 
 // router.route('/').get(isAuth, getPosts).post(isAuth, multiUploader, createPost);
 
 router.route('/:id').get(getUser);
+router.route('/:id/update').put(isAuth, multiUploader, updateProfilePhoto);
 
 
 export default router;

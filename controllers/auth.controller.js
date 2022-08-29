@@ -60,7 +60,7 @@ export const refreshAccessToken = async (req, res) => {
       if (err) return res.sendStatus(403); //Forbidden
       // Delete refresh tokens of hacked user
       const hackedUser = await User.findOne({ username: decoded.username }).exec();
-      hackedUser.refreshToken = '';
+      hackedUser && (hackedUser.refreshToken = '');
       const result = await hackedUser.save();
     });
     return res.sendStatus(403); //Forbidden
@@ -76,9 +76,8 @@ export const refreshAccessToken = async (req, res) => {
       existingUser.refreshToken = '';
       const result = await existingUser.save();
     }
-    console.log('decoded', decoded);
+    console.log('in refreshAccessToken, decoded refresh:', decoded);
     if (err || existingUser.email !== decoded.email) return res.sendStatus(403);
-    console.log('after......');
 
     // Refresh token was still valid
     // const roles = Object.values(existingUser.roles);
@@ -98,7 +97,7 @@ export const refreshAccessToken = async (req, res) => {
       // maxAge: 24 * 60 * 60 * 1000,
     });
 
-    const newAccessToken = generateToken({ username, id }, ACCESS_TOKEN_SECRET, '2h' );
+    const newAccessToken = generateToken({ username, id }, ACCESS_TOKEN_SECRET, '2h');
     const { rest } = createUserObject(savedUser._doc);
 
     res.json({ user: { id, ...rest }, accessToken: newAccessToken });
@@ -146,7 +145,11 @@ export const register = async (req, res, next) => {
       httpOnly: true,
     });
 
-    const newAccessToken = generateToken({ username: rest.username, id }, ACCESS_TOKEN_SECRET, '7d');
+    const newAccessToken = generateToken(
+      { username: rest.username, id },
+      ACCESS_TOKEN_SECRET,
+      '7d'
+    );
 
     // Send response
     res.status(200).json({

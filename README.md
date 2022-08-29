@@ -31,7 +31,7 @@ Looking for a project to put together all the skills I have learned so far, I be
 There are two choices for usage: 
 1. **Go to the website and peak around.**
    1. Log in with the dummy-user *Michal Scott:*  
-   Email: thatswhat@shesaid.com Password: 1234.
+   Email: thatswhat@shesaid.com Password: 123456.
    2. Or create a user with your own or a [throw-away email].(https://temp-mail.org/en/)
 2. **Clone the project to your machine. 
 NB: You will need to clone both the front-end and back-end repo.** 
