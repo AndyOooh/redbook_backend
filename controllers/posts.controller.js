@@ -17,18 +17,28 @@ export const createPost = async (req, res, next) => {
   console.log('req.files: ', req.files);
   console.log('req.file: ', req.file);
 
+  const { text } = req.body;
+  const image = JSON.parse(req.body.image);
   const { user, files } = req;
-  const postId = uuidv4();
+  const type = req.query.type;
+  console.log('🚀 ~ file: posts.controller.js ~ line 23 ~ type', type);
+
   const checkedBackground = req.body.background === 'null' ? null : req.body.background;
 
-  console.log('checkedBackground: ', checkedBackground);
+  const postId = uuidv4();
 
+  let images;
   try {
-    const images = await uploadToCloudinary({ files, username: user.username, postId });
+    if (type === 'cover' || type === 'profile') {
+      images = [image]; // TODO: figure out the correct format. Maybe from request payload (ImageCropper)
+    } else if (!type) {
+      images = await uploadToCloudinary({ files, username: user.username, postId });
+    }
 
     // Create post
     const post = await new Post({
-      ...req.body,
+      text,
+      type,
       _id: postId,
       user: user.id,
       images: images,
@@ -88,7 +98,7 @@ export const getPosts = async (req, res, next) => {
 
   try {
     const posts = await Post.find(filter)
-      .populate('user', 'first_name last_name picture username gender')
+      .populate('user', 'first_name last_name pictures username gender')
       .sort({ createdAt: -1 })
       .exec();
     const { _id: id, ...rest } = posts;

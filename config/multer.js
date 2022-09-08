@@ -20,9 +20,12 @@ export const multerConfig = multer({
   },
 });
 
-// Middleware for requests expecting multiple files 
-export const multiUploader = multerConfig.fields([
-  { name: 'images', maxCount: 6 },
-]);
+// Middleware for requests expecting multiple files
+// Make generic: return the multerconfig.fields call and give upload paramters for maxCount and maybe name too.
+// also I should make another one for single files.
+// Also, they should both live in middleware
+// export const multiUploader = multerConfig.fields([
+//   { name: 'images', maxCount: 6 },
+// ]);
 
 

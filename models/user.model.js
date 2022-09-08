@@ -37,15 +37,26 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    picture: {
-      type: String,
-      trim: true,
-      default:
-        'https://res.cloudinary.com/dmhcnhtng/image/upload/v1643044376/avatars/default_pic_jeaybr.png', // Need the real path
+
+    pictures: {
+      type: Array,
+      default: [
+        {
+          id: 'default_image',
+          url: 'https://res.cloudinary.com/dmhcnhtng/image/upload/v1643044376/avatars/default_pic_jeaybr.png',
+          usedBefore: true,
+        },
+      ],
     },
-    cover: {
-      type: String,
-      default: 'https://res.cloudinary.com/', // Need the real path
+    covers: {
+      type: Array,
+      default: [
+        {
+          id: 'default_image',
+          url: 'https://www.freeiconspng.com/img/20631',
+          usedBefore: true,
+        },
+      ],
     },
     gender: {
       type: String,

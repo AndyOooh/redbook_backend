@@ -2,8 +2,6 @@ import { User } from '../models/user.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
 import { createUserObject } from './auth.helpers.js';
 
-import cloudinary from '../config/cloudinary.js';
-
 // @desc get a user
 // @route GET /api/users/:id
 // @access Public
@@ -32,7 +30,7 @@ export const getUser = async (req, res, next) => {
       user = { id, ...rest };
     } else {
       user = await User.findById(userId)
-        .select('first_name last_name username picture gender')
+        .select('first_name last_name username pictures gender')
         .exec();
     }
     console.log('user in response: ', user);
@@ -70,45 +68,69 @@ export const getProfile = async (req, res, next) => {
 export const updateProfilePhoto = async (req, res, next) => {
   console.log('in updateProfilePhoto');
   console.log('req.body: ', req.body);
-  console.log('req.files: ', req.files);
   console.log('req.file: ', req.file);
   console.log('req.params ', req.params);
-
-  console.log(typeof req.body.images);
-
   console.log('req.query ', req.query); //?type=profile or cover
-  // const type = req.query.type; use this in uploadtocloudinary
 
-  const { files } = req;
+  const type = req.query.type; //use this in uploadtocloudinary
+  const image = req.file || JSON.parse(req.body.image);
+
   const { id, username } = req.user;
-  const { id: userId } = req.params;
+  const { id: profileUserId } = req.params;
 
-  if (userId !== id) {
+  if (profileUserId !== id) {
     return res.status(401).json({
       message: 'You are not authorized to update this profile',
     });
   }
 
-  try {
-    // const images = await uploadToCloudinary({ files, username, type: 'profile' });
-    const images = await cloudinary.uploader.upload(req.body.images.file, {
-      use_filename: true,
-      unique_filename: false,
-      overwrite: true,
-      folder: 'redbook/users/' + username,
-    });
+  let selector;
+  let field;
 
-
-    // const images = await uploadToCloudinary({ files: req.body.images, username, type: 'profile' });
-    console.log('🚀 ~ file: users.controller.js ~ line 88 ~ updateProfilePhoto ~ images', images);
-  } catch (error) {
-    console.log('🚀 ~ file: users.controller.js ~ line 91 ~ updateProfilePhoto ~ error', error);
+  if (type === 'profile') {
+    selector = 'pictures -_id';
+    field = 'pictures';
+  } else if (type === 'cover') {
+    selector = 'covers -_id';
+    field = 'covers';
   }
 
-  // upload to cloudinary
-  // update user.profile_photo
-  // not here: send another request on 'save' to create a post 'changed thir profile photo'
+  let picsToReturn;
+  try {
+    if (image.usedBefore) {
+      const returnedImages = await User.findById(profileUserId).select(selector).exec();
+      // const objvalues = returnedImages[field];
 
-  // send image url in response
-  res.status(200).json({ message: 'Profile photo updated' });
+      const newImagesArray = returnedImages[field]?.filter(img => img.id !== image.id);
+
+      newImagesArray.unshift(image);
+      const updatedUser = await User.findByIdAndUpdate(
+        id,
+        {
+          [field]: newImagesArray,
+        },
+        { new: true }
+      ).exec();
+      picsToReturn = updatedUser[field];
+    } else if (image) {
+      const uploadedImage = await uploadToCloudinary({ file: image, username, type: type });
+      console.log('🚀 ~ file: users.controller.js ~ line 123 ~ uploadedImage', uploadedImage);
+      const imageToStore = { ...uploadedImage, usedBefore: true };
+      const updatedUser = await User.findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            [field]: { $each: [imageToStore], $position: 0 },
+          },
+        },
+        { new: true }
+      );
+      picsToReturn = updatedUser[field];
+    } else {
+      return res.status(400).json({ message: 'No image found in request' });
+    }
+    return res.status(200).json(picsToReturn);
+  } catch (error) {
+    console.log('🚀 ~ file: users.controller.js ~ line 99 ~ updateProfilePhoto ~ error', error);
+  }
 };

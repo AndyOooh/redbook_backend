@@ -5,12 +5,12 @@ const authValidator = {
   register: [
     body('first_name')
       .trim()
-      .isLength({ min: 3, max: 30 })
-      .withMessage('First name must be minimum 3 characters.'),
+      .isLength({ min: 2, max: 30 })
+      .withMessage('First name must be minimum 2 characters.'),
     body('last_name')
       .trim()
-      .isLength({ min: 3, max: 30 })
-      .withMessage('Last name must be minimum 3 characters.'),
+      .isLength({ min: 2, max: 30 })
+      .withMessage('Last name must be minimum 2 characters.'),
     // body('username')
     //   .trim()
     //   .isLength({ min: 3 })

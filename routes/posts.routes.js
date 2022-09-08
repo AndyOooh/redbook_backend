@@ -8,7 +8,7 @@ import {
 } from '../controllers/posts.controller.js';
 
 import { isAuth } from '../middleware/isAuth.js';
-import { multiUploader } from '../config/multer.js';
+import { multiUploader } from '../middleware/multerMulti.js';
 
 const router = express.Router();
 
