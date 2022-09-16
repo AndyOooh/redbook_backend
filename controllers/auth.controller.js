@@ -14,6 +14,7 @@ import {
   resetCodeEmailOptions,
   verificationEmailOPtions,
 } from './auth.helpers.js';
+import { nameCase } from '../utils/functions.js';
 
 // ---------------------------------------- /logout ----------------------------------------
 // @desc Log a user out
@@ -98,9 +99,9 @@ export const refreshAccessToken = async (req, res) => {
     });
 
     const newAccessToken = generateToken({ username, id }, ACCESS_TOKEN_SECRET, '2h');
-    const { rest } = createUserObject(savedUser._doc);
+    const { rest, details } = createUserObject(savedUser._doc);
 
-    res.json({ user: { id, ...rest }, accessToken: newAccessToken });
+    res.json({ user: { id, details, ...rest }, accessToken: newAccessToken });
   });
 };
 
@@ -121,6 +122,10 @@ export const register = async (req, res, next) => {
   }
 
   const { first_name, last_name, email, password } = req.body;
+  const first_name_cased = nameCase(first_name);
+  const last_name_cased = nameCase(last_name);
+  req.body.first_name = first_name_cased;
+  req.body.last_name = last_name_cased;
 
   const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
 
@@ -178,9 +183,7 @@ export const login = async (req, res, next) => {
     return next(error);
   }
   try {
-    const existingUser = await User.findOne({ email }).select(
-      '-details -createdAt -updatedAt -__v'
-    );
+    const existingUser = await User.findOne({ email }).select(' -createdAt -updatedAt -__v');
 
     if (!existingUser) {
       const error = new Error('User not found');

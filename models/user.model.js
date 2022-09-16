@@ -43,7 +43,8 @@ const userSchema = new Schema(
       default: [
         {
           id: 'default_image',
-          url: 'https://res.cloudinary.com/dmhcnhtng/image/upload/v1643044376/avatars/default_pic_jeaybr.png',
+          // url: 'https://res.cloudinary.com/dmhcnhtng/image/upload/v1643044376/avatars/default_pic_jeaybr.png',
+          url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663082857/redbook/default_profile_redbook_qmw852.png',
           usedBefore: true,
         },
       ],
@@ -53,7 +54,8 @@ const userSchema = new Schema(
       default: [
         {
           id: 'default_image',
-          url: 'https://www.freeiconspng.com/img/20631',
+          // url: 'https://www.freeiconspng.com/img/20606">Icon Drawing Upload',
+          url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663082074/redbook/default_cover_redbook_qzcgqb.png',
           usedBefore: true,
         },
       ],
@@ -115,36 +117,46 @@ const userSchema = new Schema(
     details: {
       bio: {
         type: String,
+        default: '',
       },
       otherName: {
         type: String,
+        default: '',
       },
       job: {
         type: String,
+        default: '',
       },
       workPlace: {
         type: String,
+        default: '',
       },
       highSchool: {
         type: String,
+        default: '',
       },
       college: {
         type: String,
+        default: '',
       },
       currentCity: {
         type: String,
+        default: '',
       },
       homeTown: {
         type: String,
+        default: '',
       },
       relationshipStatus: {
         type: String,
         enum: ['single', 'in a relationship', 'engaged', 'married', 'complicated'],
       },
+      instaGram: {
+        type: String,
+        default: '',
+      },
     },
-    instaGram: {
-      type: String,
-    },
+
     savedPosts: [
       {
         post: {

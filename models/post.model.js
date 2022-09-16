@@ -8,7 +8,7 @@ const postsSchema = new Schema(
     _id: String,
     type: {
       type: String,
-      enum: ['profile', 'cover', null],
+      enum: ['profile', 'cover', 'feed', null],
       default: null,
     },
     text: String,

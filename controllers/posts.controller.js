@@ -18,7 +18,7 @@ export const createPost = async (req, res, next) => {
   console.log('req.file: ', req.file);
 
   const { text } = req.body;
-  const image = JSON.parse(req.body.image);
+  // const image = JSON.parse(req.body.image);
   const { user, files } = req;
   const type = req.query.type;
   console.log('🚀 ~ file: posts.controller.js ~ line 23 ~ type', type);
@@ -30,8 +30,8 @@ export const createPost = async (req, res, next) => {
   let images;
   try {
     if (type === 'cover' || type === 'profile') {
-      images = [image]; // TODO: figure out the correct format. Maybe from request payload (ImageCropper)
-    } else if (!type) {
+      images = [JSON.parse(req.body.image)]; // TODO: figure out the correct format. Maybe from request payload (ImageCropper)
+    } else if (type === 'feed') {
       images = await uploadToCloudinary({ files, username: user.username, postId });
     }
 
@@ -90,6 +90,7 @@ export const getPosts = async (req, res, next) => {
   let filter = {};
   console.log('req.query in getPosts: ', req.query);
 
+   // filter should be an object simialr to {user: user._id}, where _id corresponds to the user id in MongoDb.
   if (req.query) {
     filter = { ...filter, ...req.query };
   }
@@ -98,7 +99,7 @@ export const getPosts = async (req, res, next) => {
 
   try {
     const posts = await Post.find(filter)
-      .populate('user', 'first_name last_name pictures username gender')
+      .populate('user', 'first_name last_name pictures covers username gender')
       .sort({ createdAt: -1 })
       .exec();
     const { _id: id, ...rest } = posts;

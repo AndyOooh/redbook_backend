@@ -26,9 +26,10 @@ export const getUser = async (req, res, next) => {
           message: 'User not found',
         });
       }
-      const { id, rest } = createUserObject(foundUser._doc);
-      user = { id, ...rest };
+      const { id, details, rest } = createUserObject(foundUser._doc);
+      user = { id, details, ...rest };
     } else {
+      // shoudl be else If (type === 'post' (name it whatever) and needs to be matched on frontend request. I belive the only other use case for now is to show in comments/posts )
       user = await User.findById(userId)
         .select('first_name last_name username pictures gender')
         .exec();
@@ -45,6 +46,7 @@ export const getUser = async (req, res, next) => {
 // @route GET /api/users/:id
 // @access Public
 
+// Not in use since getUser has types (I think)
 export const getProfile = async (req, res, next) => {
   const { id: userId } = req.params;
 
