@@ -16,7 +16,6 @@ export const isAuth = async (req, res, next) => {
     const accessToken = authHeader.split(' ')[1];
     const decodedToken = await jwt.verify(accessToken, ACCESS_TOKEN_SECRET);
     // const decodedToken = await jwt.verify(token, REFRESH_TOKEN_SECRET);
-    console.log('decodedToken', decodedToken);
     req.user = decodedToken;
     next();
   } catch (error) {

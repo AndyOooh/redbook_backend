@@ -136,3 +136,67 @@ export const updateProfilePhoto = async (req, res, next) => {
     console.log('🚀 ~ file: users.controller.js ~ line 99 ~ updateProfilePhoto ~ error', error);
   }
 };
+
+
+
+export const updateUser = async (req, res, next) => {
+  console.log('🚀 ~ file: users.controller.js ~ line 141 ~ req.body', req.body);
+  const { id, username } = req.user;
+  console.log('🚀 ~ file: users.controller.js ~ line 143 ~ req.user', req.user);
+  const { id: profileUserId } = req.params;
+  console.log('🚀 ~ file: users.controller.js ~ line 144 ~ req.params', req.params);
+  const { field } = req.query;
+  console.log('🚀 ~ file: users.controller.js ~ line 147 ~ req.query', req.query)
+  console.log('🚀 ~ file: users.controller.js ~ line 147 ~ field', field);
+  
+
+  if (profileUserId !== id) {
+    return res.status(401).json({
+      message: 'You are not authorized to update this profile',
+    });
+  }
+
+  try {
+    // const foundUser = User.findById(user.id).exec();
+    // console.log('🚀 ~ file: users.controller.js ~ line 151 ~ foundUser', foundUser);
+    // if (!foundUser) {
+    //   return res.status(401).json({
+    //     message: "User doesn't exist",
+    //   });
+    // }
+
+    // the probelm is: we are overwriting details as it has nested objects. we either have to send the entire updated object (dont)
+    // or we have to update the nested objects separately (do)
+    // maybe spread them and use save() instead of updateOne
+    // problem with the above is we dont know which properties we will update. and even if we spread the entire user document,
+    // we will have to update the nested objects separately.
+    // I think we need a way to iterate through the user documenet or just the detais property (in wgich case this should be a func
+    // specificalyfor details - and therefore named as such)
+    // we may need an advanced function. what are the ones that call themselves called? recursive?
+    // the above was (temp at least) solved by using $set. later replaced by save() + spread
+
+    let user = await User.findById(id).exec();
+    user[field] = { ...user[field], ...req.body };
+    const updatedUserDetails = await user.save();
+
+    // const updatedUserDetails = await User.findOneAndUpdate(
+    //   id,
+    //   // have to use $set to update nested objects without overwriting the entire object.
+    //   { $set: { details: { ...req.body } } },
+    //   { new: true }
+    // )
+    //   // .exec()
+    //   .select('details -_id');
+
+    console.log(
+      '🚀 ~ file: users.controller.js ~ line 162 ~ updatedUserDetails',
+      updatedUserDetails[field]
+    );
+    return res
+      .status(200)
+      .json({ message: 'User updated successfully', userData: updatedUserDetails[field] });
+    // return res.status(200).json({ updatedUser });
+  } catch (error) {
+    console.log('error', error);
+  }
+};

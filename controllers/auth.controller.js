@@ -184,6 +184,7 @@ export const login = async (req, res, next) => {
   }
   try {
     const existingUser = await User.findOne({ email }).select(' -createdAt -updatedAt -__v');
+    console.log('🚀 ~ file: auth.controller.js ~ line 187 ~ existingUser', existingUser)
 
     if (!existingUser) {
       const error = new Error('User not found');

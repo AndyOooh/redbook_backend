@@ -55,7 +55,8 @@ const userSchema = new Schema(
         {
           id: 'default_image',
           // url: 'https://www.freeiconspng.com/img/20606">Icon Drawing Upload',
-          url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663082074/redbook/default_cover_redbook_qzcgqb.png',
+          // url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663082074/redbook/default_cover_redbook_qzcgqb.png',
+          url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663334142/redbook/default_cover_redbook__E4E6EB_cle5gj.png',
           usedBefore: true,
         },
       ],
@@ -129,7 +130,12 @@ const userSchema = new Schema(
       },
       workPlace: {
         type: String,
-        default: '',
+        default: "McDonald's",
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'public',
+        },
       },
       highSchool: {
         type: String,
@@ -150,6 +156,11 @@ const userSchema = new Schema(
       relationshipStatus: {
         type: String,
         enum: ['single', 'in a relationship', 'engaged', 'married', 'complicated'],
+        privacy: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'public',
+        },
       },
       instaGram: {
         type: String,
