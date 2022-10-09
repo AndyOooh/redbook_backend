@@ -13,9 +13,13 @@ export const getUser = async (req, res, next) => {
     let user;
 
     if (type === 'currentUser') {
-      user = await User.findOne({ username })
+      user = await User.findOne({ username: username })
         .select('friends following followers requestsSent requestsReceived')
-        .populate('friends', 'first_name last_name pictures', { path: 'pictures', perDocumentLimit: 2 });
+        .populate('friends', 'first_name last_name pictures', {
+          path: 'pictures',
+          perDocumentLimit: 2,
+        })
+        .exec();
       // .populate({
       //   path: 'friends',
       //   // Get friends of friends - populate the 'friends' array for every friend
@@ -26,7 +30,7 @@ export const getUser = async (req, res, next) => {
       // });
     } else if (type === 'profile') {
       // const foundUser = await User.findById(userId).exec();
-      const foundUser = await User.findOne({ username })
+      const foundUser = await User.findOne({ username: username })
         .populate('friends', 'first_name last_name ')
         .populate({
           path: 'friends',
@@ -47,7 +51,7 @@ export const getUser = async (req, res, next) => {
       user = { id, details, ...rest };
     } else {
       // shoudl be else If (type === 'post' (name it whatever) and needs to be matched on frontend request. I belive the only other use case for now is to show in comments/posts )
-      user = await User.findById(userId)
+      user = await User.findOne({ username: username })
         .select('first_name last_name username pictures gender')
         .exec();
     }
