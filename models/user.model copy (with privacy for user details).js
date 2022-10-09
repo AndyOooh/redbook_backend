@@ -1,9 +1,7 @@
 import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
-const { ObjectId } = mongoose.Types; //could be mongoose.Schema
-
-const michaelScottId = '';
+const { ObjectId } = Schema.Types; //could be mongoose.Schema
 
 const userSchema = new Schema(
   {
@@ -93,52 +91,22 @@ const userSchema = new Schema(
     accessToken: {
       type: String,
     },
-    friends: [{ type: String, ref: 'User', unique: true }],
-    followers: [{ type: String, ref: 'User', unique: true }],
-    following: [{ type: String, ref: 'User', unique: true }],
-    requestsReceived: [{ type: String, ref: 'User', unique: true }],
-    requestsSent: [{ type: String, ref: 'User', unique: true }],
-    // following: [],
-    // followers: [],
-    // requestsReceived: [],
-    // requestsSent: [],
-
-    // friends: [{ type: ObjectId, ref: 'User', unique: false }],
-    // following: [{ type: ObjectId, ref: 'User', unique: false }],
-    // followers: [{ type: ObjectId, ref: 'User', unique: false }],
-    // requestsReceived: [{ type: ObjectId, ref: 'User', unique: false }],
-    // requestsSent: [{ type: ObjectId, ref: 'User', unique: false }],
-    // friends: {
-    //   type: Array,
-    //   // test if unique works for elements inside the array, If so, add to all others
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341ec2090986e8cc3e99edd',
-    // },
-    // following: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341ec2090986e8cc3e99edd',
-    // },
-    // followers: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341ec2090986e8cc3e99edd',
-    // },
-    // requestsReceived: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341eaf5108b5d7552649acb',
-    // },
-    // requestsSent: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   default: [''],
-    // },
+    friends: {
+      type: Array,
+      default: [],
+    },
+    following: {
+      type: Array,
+      default: [],
+    },
+    followers: {
+      type: Array,
+      default: [],
+    },
+    requests: {
+      type: Array,
+      default: [],
+    },
     search: [
       {
         user: {
@@ -149,54 +117,115 @@ const userSchema = new Schema(
     ],
     details: {
       bio: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'public',
+        },
       },
       otherName: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       job: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       workPlace: {
-        type: String,
-        default: "McDonald's",
+        value: {
+          type: String,
+          default: "McDonald's",
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       highSchool: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       college: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       currentCity: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       hometown: {
-        type: String,
-        default: '',
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
       relationshipStatus: {
-        type: String,
-        enum: [
-          'Single',
-          'In a relationship',
-          'Engaged',
-          'Divorced',
-          'Married',
-          "It's Complicated",
-          'Prefer not to say',
-          '',
-        ],
-        default: '',
+        value: {
+          type: String,
+          enum: ['single', 'in a relationship', 'engaged', 'married', 'complicated', ''],
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
-      instagram: {
-        type: String,
-        default: '',
+      instaGram: {
+        value: {
+          type: String,
+          default: '',
+        },
+        visibility: {
+          type: String,
+          enum: ['public', 'friends', 'private'],
+          default: 'private',
+        },
       },
     },
 

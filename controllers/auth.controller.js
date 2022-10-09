@@ -32,7 +32,7 @@ export const logout = async (req, res) => {
     existingUser.refreshToken = null;
   }
 
-  await existingUser.save();
+  await existingUser?.save();
 
   res.clearCookie('refresh_token', { httpOnly: true });
   res.sendStatus(204);
@@ -60,9 +60,11 @@ export const refreshAccessToken = async (req, res) => {
     jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, decoded) => {
       if (err) return res.sendStatus(403); //Forbidden
       // Delete refresh tokens of hacked user
-      const hackedUser = await User.findOne({ username: decoded.username }).exec();
-      hackedUser && (hackedUser.refreshToken = '');
-      const result = await hackedUser.save();
+      const hackedUser = await User.findOne({ email: decoded.email }).exec();
+      if (hackedUser) {
+        hackedUser.refreshToken = '';
+        await hackedUser.save();
+      }
     });
     return res.sendStatus(403); //Forbidden
   }
@@ -156,6 +158,18 @@ export const register = async (req, res, next) => {
       '7d'
     );
 
+    // Get friend request from? (Emma Watson in dev, Michael Scott in production)
+    // const firstFriendId =
+    //   NODE_ENV === 'production' ? '632b4d52b823ea90d2723b35' : '634225cfcee1968f254e6f84';
+    // const firstFriendRequest = await User.findById(firstFriendId).exec();
+    // console.log(
+    //   '🚀 ~ file: auth.controller.js ~ line 162 ~ firstFriendRequest',
+    //   firstFriendRequest
+    // );
+    // firstFriendRequest.following.push(createdUser._id);
+    // firstFriendRequest.requestsSent.push(createdUser._id);
+    // firstFriendRequest.save();
+
     // Send response
     res.status(200).json({
       user: { id, ...rest },
@@ -184,7 +198,7 @@ export const login = async (req, res, next) => {
   }
   try {
     const existingUser = await User.findOne({ email }).select(' -createdAt -updatedAt -__v');
-    console.log('🚀 ~ file: auth.controller.js ~ line 187 ~ existingUser', existingUser)
+    console.log('🚀 ~ file: auth.controller.js ~ line 187 ~ existingUser', existingUser);
 
     if (!existingUser) {
       const error = new Error('User not found');
@@ -203,7 +217,7 @@ export const login = async (req, res, next) => {
     }
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
-    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '7d');
+    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '700d');
 
     existingUser.refreshToken = newRefreshToken;
     await existingUser.save();
