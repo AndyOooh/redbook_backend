@@ -62,31 +62,9 @@ export const getUser = async (req, res, next) => {
   }
 };
 
-// @desc get a user
-// @route GET /api/users/:id
-// @access Public
-
-// Not in use since getUser has types (I think)
-export const getProfile = async (req, res, next) => {
-  const { id: userId } = req.params;
-
-  try {
-    const user = await User.findById(userId)
-      // .select('first_name last_name username picture gender')
-      .exec();
-    res.status(200).json(user);
-  } catch (error) {
-    console.log('error in getUser: ', error);
-    next(error);
-  }
-
-  res.status(200).json({ 'Hi from getProfile': userId });
-};
-
 // @desc update a user's profile photo
 // @route PUT /api/users/:id/update
 // @access Private
-
 export const updateProfilePhoto = async (req, res, next) => {
   console.log('in updateProfilePhoto');
   console.log('req.body: ', req.body);

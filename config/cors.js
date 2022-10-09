@@ -4,4 +4,13 @@ import { FRONTEND_URL } from './VARS.js';
 export const corsConfig = {
   origin: [FRONTEND_URL, 'http://localhost:3001'],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], //notice OPTIONS not needed for preflight req to pass
+  allowedHeaders: [
+    'Access-Control-Allow-Origin',
+    'Origin',
+    'Content-Type',
+    'Authorization',
+    // 'X-Requested-With', //not sure what it is. came from SO
+    // 'Accept', //not sure what it is. came from SO
+  ],
 };
