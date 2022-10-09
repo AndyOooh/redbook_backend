@@ -10,6 +10,9 @@ export const corsConfig = {
     'Origin',
     'Content-Type',
     'Authorization',
+    'Content-length',
+    'Access-Control-Allow-Headers'
+
     // 'X-Requested-With', //not sure what it is. came from SO
     // 'Accept', //not sure what it is. came from SO
   ],
