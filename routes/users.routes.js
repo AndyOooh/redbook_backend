@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   getUser,
-  getProfile,
+  // getProfile,
   updateProfilePhoto,
   updateUser,
   friendRequest,
