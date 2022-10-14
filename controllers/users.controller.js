@@ -15,7 +15,7 @@ export const getUser = async (req, res, next) => {
     let user;
     if (type === 'profile') {
       let foundUser = await User.findOne({ username: username })
-        .populate('friends', 'first_name last_name pictures')
+        .populate('friends', 'first_name last_name username pictures')
         .lean();
       const friendship = getFriendship(foundUser, userId);
       const { id, rest } = createUserObject(foundUser); // omit ._doc bc lean()
