@@ -10,9 +10,9 @@ export const corsConfig = {
     'Origin',
     'Content-Type',
     'Authorization',
+    // 'Access-Control-Allow-Headers',
 
     // 'Content-length',
-    // 'Access-Control-Allow-Headers',
     // 'X-Requested-With',
     // 'Accept',
   ],
