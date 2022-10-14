@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 
 import { ACCESS_TOKEN_SECRET, NODE_ENV, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
-import { User } from '../models/user.model.js';
+import { dwightId, michaelScottId, User } from '../models/user.model.js';
 import { Code } from '../models/code.model.js';
 
 import { sendEmail } from '../services/email.service.js';
@@ -44,9 +44,8 @@ export const logout = async (req, res) => {
 // @access Private
 export const refreshAccessToken = async (req, res) => {
   const cookies = req.cookies;
-  console.log('🚀 ~ file: auth.controller.js ~ line 47 ~ cookies', cookies)
-  const decoded = await jwt.decode(cookies.refresh_token,REFRESH_TOKEN_SECRET );
-  console.log('🚀 ~ file: auth.controller.js ~ line 48 ~ decoded', decoded)
+  console.log('🚀 ~ file: auth.controller.js ~ line 47 ~ cookies', cookies);
+  const decoded = await jwt.decode(cookies.refresh_token, REFRESH_TOKEN_SECRET);
   if (!cookies?.refresh_token) return res.sendStatus(401);
   const refreshToken = cookies.refresh_token;
   res.clearCookie('refresh_token', {
@@ -160,17 +159,24 @@ export const register = async (req, res, next) => {
       '7d'
     );
 
-    // Get friend request from? (Emma Watson in dev, Michael Scott in production)
-    // const firstFriendId =
-    //   NODE_ENV === 'production' ? '632b4d52b823ea90d2723b35' : '634225cfcee1968f254e6f84';
-    // const firstFriendRequest = await User.findById(firstFriendId).exec();
-    // console.log(
-    //   '🚀 ~ file: auth.controller.js ~ line 162 ~ firstFriendRequest',
-    //   firstFriendRequest
-    // );
-    // firstFriendRequest.following.push(createdUser._id);
-    // firstFriendRequest.requestsSent.push(createdUser._id);
-    // firstFriendRequest.save();
+    // Update Michael Scott to be first friend:
+    const firstFriendId = michaelScottId;
+    if (firstFriendId) {
+      const firstFriend = await User.findById(firstFriendId).exec();
+      firstFriend.friends.push(createdUser._id);
+      firstFriend.following.push(createdUser._id);
+      firstFriend.followers.push(createdUser._id);
+      await firstFriend.save();
+    }
+
+    // Update Dwight Schrute to send first friend request:
+    const firstRequestorId = dwightId;
+    if (firstRequestorId) {
+      const firstRequestor = await User.findById(firstRequestorId).exec();
+      firstRequestor.following.push(createdUser._id);
+      firstRequestor.requestsSent.push(createdUser._id);
+      await firstRequestor.save();
+    }
 
     // Send response
     res.status(200).json({
@@ -178,7 +184,6 @@ export const register = async (req, res, next) => {
       accessToken: newAccessToken,
     });
   } catch (error) {
-    // console.log('in register, error:', error.response.data.error_description);
     console.log('in register, error:', error);
     // delete user in db if verification email failed?
     return next(error);
@@ -218,7 +223,7 @@ export const login = async (req, res, next) => {
     }
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
-    console.log('🚀 ~ file: auth.controller.js ~ line 220 ~ newRefreshToken', newRefreshToken)
+    console.log('🚀 ~ file: auth.controller.js ~ line 220 ~ newRefreshToken', newRefreshToken);
     const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '700d');
 
     existingUser.refreshToken = newRefreshToken;

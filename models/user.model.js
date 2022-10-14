@@ -1,9 +1,14 @@
 import mongoose from 'mongoose';
+import { NODE_ENV } from '../config/VARS.js';
 
 const Schema = mongoose.Schema;
 const { ObjectId } = mongoose.Types;
 
-const michaelScottId = '';
+export const michaelScottId =
+  NODE_ENV === 'production' ? '63493a0684e23607bcf37abb' : '634946b71aba3ef65d13e34a';
+
+export const dwightId =
+  NODE_ENV === 'production' ? '63495640ae09b99a7e08cb0b' : '634948460ec050e4770551b3';
 
 const userSchema = new Schema(
   {
@@ -91,11 +96,31 @@ const userSchema = new Schema(
     accessToken: {
       type: String,
     },
-    friends: [{ type: String, ref: 'User' }],
-    followers: [{ type: String, ref: 'User' }],
-    following: [{ type: String, ref: 'User' }],
-    requestsReceived: [{ type: String, ref: 'User' }],
-    requestsSent: [{ type: String, ref: 'User' }],
+    friends: {
+      type: [String],
+      ref: 'User',
+      default: [michaelScottId],
+    },
+    followers: {
+      type: [String],
+      ref: 'User',
+      default: [michaelScottId, dwightId],
+    },
+    following: {
+      type: [String],
+      ref: 'User',
+      default: [michaelScottId],
+    },
+    requestsReceived: {
+      type: [String],
+      ref: 'User',
+      default: [dwightId],
+    },
+    requestsSent: {
+      type: [String],
+      ref: 'User',
+    },
+    // requestsSent: [{ type: String, ref: 'User' }], // This saves strings. The other option saves ObjectId(s)
     search: [
       {
         user: {
