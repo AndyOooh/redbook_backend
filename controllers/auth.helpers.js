@@ -25,13 +25,12 @@ export const resetCodeEmailOptions = (first_name, code) => {
 };
 
 export const createUserObject = user => {
-  const { _id: id, password, refreshToken, details, createdAt, updatedAt, __v, ...rest } = user;
+  const { _id: id, password, refreshToken, createdAt, updatedAt, __v, ...rest } = user;
 
   return {
     id,
     password,
     refreshToken,
-    details,
     createdAt,
     updatedAt,
     __v,

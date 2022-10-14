@@ -12,16 +12,9 @@ import { uploadToCloudinary } from '../services/cloudinary.service.js';
 // @route POST /api/posts
 // @access Private
 export const createPost = async (req, res, next) => {
-  console.log('in createPost');
-  console.log('req.body: ', req.body);
-  console.log('req.files: ', req.files);
-  console.log('req.file: ', req.file);
-
   const { text } = req.body;
-  // const image = JSON.parse(req.body.image);
   const { user, files } = req;
   const type = req.query.type;
-  console.log('🚀 ~ file: posts.controller.js ~ line 23 ~ type', type);
 
   const checkedBackground = req.body.background === 'null' ? null : req.body.background;
 
@@ -45,7 +38,7 @@ export const createPost = async (req, res, next) => {
       background: checkedBackground,
     }).save();
     console.log('New post: ', post);
-    res.json(post);
+    res.json({ message: 'Post created successfully' });
   } catch (error) {
     console.log('error: ', error);
   }
@@ -90,7 +83,7 @@ export const getPosts = async (req, res, next) => {
   let filter = {};
   console.log('req.query in getPosts: ', req.query);
 
-   // filter should be an object simialr to {user: user._id}, where _id corresponds to the user id in MongoDb.
+  // filter should be an object simialr to {user: user._id}, where _id corresponds to the user id in MongoDb.
   if (req.query) {
     filter = { ...filter, ...req.query };
   }
@@ -100,6 +93,7 @@ export const getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find(filter)
       .populate('user', 'first_name last_name pictures covers username gender')
+      .populate('comments.commentBy', 'first_name last_name pictures')
       .sort({ createdAt: -1 })
       .exec();
     const { _id: id, ...rest } = posts;
@@ -134,17 +128,24 @@ export const getPost = async (req, res, next) => {
 // @route DELETE /api/posts:id
 // @access Private
 export const deletePost = async (req, res, next) => {
+  const { id: userId } = req.user;
   const postId = req.params.id;
   try {
-    const post = await Post.findByIdAndDelete(postId);
-    if (!post) {
+    const postToDelete = await Post.findById(postId);
+    if (!postToDelete) {
       const error = new Error('Post not found');
       error.status = 404;
       throw error; //WHYYYYY not next(error)? We are in async
       // next(error);
+    } else if (postToDelete.user.toString() !== userId) {
+      const error = new Error('Unauthorized');
+      error.status = 401;
+      throw error;
     }
-    res.status(200).json({ post });
+    await Post.findByIdAndDelete(postId);
+    res.status(200).json({ message: 'Deleted post', post: postToDelete });
   } catch (error) {
+    console.log('🚀 deletePost error: ', error);
     next(error);
   }
 };

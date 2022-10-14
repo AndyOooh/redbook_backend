@@ -13,10 +13,7 @@ import { singleUploader } from '../middleware/multerSingle.js';
 
 const router = express.Router();
 
-// router.route('/').get(isAuth, getPosts).post(isAuth, multiUploader, createPost);
-
-router.route('/:username').get(getUser);
-// router.route('/:id/update').put(isAuth, multiUploader, updateProfilePhoto);
+router.route('/:username').get(isAuth, getUser);
 router.route('/:id/update-images').put(isAuth, singleUploader, updateProfilePhoto);
 router.route('/:id/update').put(isAuth, updateUser);
 router.route('/friendRequest').put(isAuth, friendRequest);

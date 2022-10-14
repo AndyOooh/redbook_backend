@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
-const { ObjectId } = mongoose.Types; //could be mongoose.Schema
+const { ObjectId } = mongoose.Types;
 
 const michaelScottId = '';
 
@@ -30,6 +30,7 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
+      lowercase: true,
       trim: true,
       text: true,
       unique: true,
@@ -45,7 +46,6 @@ const userSchema = new Schema(
       default: [
         {
           id: 'default_image',
-          // url: 'https://res.cloudinary.com/dmhcnhtng/image/upload/v1643044376/avatars/default_pic_jeaybr.png',
           url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663082857/redbook/default_profile_redbook_qmw852.png',
           usedBefore: true,
         },
@@ -56,8 +56,6 @@ const userSchema = new Schema(
       default: [
         {
           id: 'default_image',
-          // url: 'https://www.freeiconspng.com/img/20606">Icon Drawing Upload',
-          // url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663082074/redbook/default_cover_redbook_qzcgqb.png',
           url: 'https://res.cloudinary.com/dy5zg2sdz/image/upload/v1663334142/redbook/default_cover_redbook__E4E6EB_cle5gj.png',
           usedBefore: true,
         },
@@ -93,52 +91,11 @@ const userSchema = new Schema(
     accessToken: {
       type: String,
     },
-    friends: [{ type: String, ref: 'User', unique: true }],
-    followers: [{ type: String, ref: 'User', unique: true }],
-    following: [{ type: String, ref: 'User', unique: true }],
-    requestsReceived: [{ type: String, ref: 'User', unique: true }],
-    requestsSent: [{ type: String, ref: 'User', unique: true }],
-    // following: [],
-    // followers: [],
-    // requestsReceived: [],
-    // requestsSent: [],
-
-    // friends: [{ type: ObjectId, ref: 'User', unique: false }],
-    // following: [{ type: ObjectId, ref: 'User', unique: false }],
-    // followers: [{ type: ObjectId, ref: 'User', unique: false }],
-    // requestsReceived: [{ type: ObjectId, ref: 'User', unique: false }],
-    // requestsSent: [{ type: ObjectId, ref: 'User', unique: false }],
-    // friends: {
-    //   type: Array,
-    //   // test if unique works for elements inside the array, If so, add to all others
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341ec2090986e8cc3e99edd',
-    // },
-    // following: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341ec2090986e8cc3e99edd',
-    // },
-    // followers: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341ec2090986e8cc3e99edd',
-    // },
-    // requestsReceived: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   // default: '6341eaf5108b5d7552649acb',
-    // },
-    // requestsSent: {
-    //   type: Array,
-    //   // unique: true,
-    //   ref: 'User',
-    //   default: [''],
-    // },
+    friends: [{ type: String, ref: 'User' }],
+    followers: [{ type: String, ref: 'User' }],
+    following: [{ type: String, ref: 'User' }],
+    requestsReceived: [{ type: String, ref: 'User' }],
+    requestsSent: [{ type: String, ref: 'User' }],
     search: [
       {
         user: {
@@ -199,7 +156,6 @@ const userSchema = new Schema(
         default: '',
       },
     },
-
     savedPosts: [
       {
         post: {
@@ -212,8 +168,8 @@ const userSchema = new Schema(
         },
       },
     ],
-    // auto-creates: createdAt: Date, updatedAt: Date
   },
+  // auto-creates: createdAt: Date, updatedAt: Date
   { timestamps: true }
 );
 

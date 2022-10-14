@@ -25,6 +25,7 @@ export const {
   // ORIGIN,
 } = process.env;
 
+export const LOG_SETTING = NODE_ENV === 'production' ? 'combined' : 'dev';
 export const FRONTEND_URL =
   NODE_ENV === 'production' ? process.env.FRONTEND_URL_PROD : process.env.FRONTEND_URL_DEV;
 

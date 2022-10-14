@@ -44,6 +44,9 @@ export const logout = async (req, res) => {
 // @access Private
 export const refreshAccessToken = async (req, res) => {
   const cookies = req.cookies;
+  console.log('🚀 ~ file: auth.controller.js ~ line 47 ~ cookies', cookies)
+  const decoded = await jwt.decode(cookies.refresh_token,REFRESH_TOKEN_SECRET );
+  console.log('🚀 ~ file: auth.controller.js ~ line 48 ~ decoded', decoded)
   if (!cookies?.refresh_token) return res.sendStatus(401);
   const refreshToken = cookies.refresh_token;
   res.clearCookie('refresh_token', {
@@ -71,7 +74,7 @@ export const refreshAccessToken = async (req, res) => {
 
   // const newRefreshTokenArray = existingUser.refreshToken.filter(rt => rt !== refreshToken);
 
-  // evaluate jwt
+  // evaluate jwt /rewrite to get rid of cb - its alreasy
   jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, decoded) => {
     if (err) {
       // expired refresh token
@@ -90,7 +93,6 @@ export const refreshAccessToken = async (req, res) => {
     // Saving refreshToken with current user
     existingUser.refreshToken = newRefreshToken;
     const savedUser = await existingUser.save();
-    console.log('in refreshToken, savedUser');
 
     // Creates Secure Cookie with new refresh token
     res.cookie('refresh_token', newRefreshToken, {
@@ -198,7 +200,6 @@ export const login = async (req, res, next) => {
   }
   try {
     const existingUser = await User.findOne({ email }).select(' -createdAt -updatedAt -__v');
-    console.log('🚀 ~ file: auth.controller.js ~ line 187 ~ existingUser', existingUser);
 
     if (!existingUser) {
       const error = new Error('User not found');
@@ -217,6 +218,7 @@ export const login = async (req, res, next) => {
     }
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
+    console.log('🚀 ~ file: auth.controller.js ~ line 220 ~ newRefreshToken', newRefreshToken)
     const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '700d');
 
     existingUser.refreshToken = newRefreshToken;
