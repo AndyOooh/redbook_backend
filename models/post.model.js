@@ -48,4 +48,6 @@ const postsSchema = new Schema(
   }
 );
 
-export default mongoose.model('Post', postsSchema);
+export const Post = mongoose.model('Post', postsSchema);
+
+// export const User = mongoose.model('User', userSchema);

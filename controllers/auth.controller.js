@@ -44,7 +44,6 @@ export const logout = async (req, res) => {
 // @access Private
 export const refreshAccessToken = async (req, res) => {
   const cookies = req.cookies;
-  console.log('🚀 ~ file: auth.controller.js ~ line 47 ~ cookies', cookies);
   const decoded = await jwt.decode(cookies.refresh_token, REFRESH_TOKEN_SECRET);
   if (!cookies?.refresh_token) return res.sendStatus(401);
   const refreshToken = cookies.refresh_token;
@@ -224,7 +223,7 @@ export const login = async (req, res, next) => {
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
     console.log('🚀 ~ file: auth.controller.js ~ line 220 ~ newRefreshToken', newRefreshToken);
-    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '700d');
+    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '12h');
 
     existingUser.refreshToken = newRefreshToken;
     await existingUser.save();

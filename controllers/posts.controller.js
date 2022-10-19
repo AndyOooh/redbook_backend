@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 // import { upload } from '../config/cloudinary.js';
-import Post from '../models/post.model.js';
+import { Post } from '../models/post.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
 
 // TODO use asynchandler or create one
@@ -79,7 +79,6 @@ export const createComment = async (req, res, next) => {
 // @route GET /api/posts
 // @access Public
 export const getPosts = async (req, res, next) => {
-  console.log('in getPosts');
   let filter = {};
   console.log('req.query in getPosts: ', req.query);
 

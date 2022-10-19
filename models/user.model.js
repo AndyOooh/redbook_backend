@@ -66,6 +66,7 @@ const userSchema = new Schema(
         },
       ],
     },
+    // postPictures: Array,
     gender: {
       type: String,
       required: [true, 'Gender is required'],

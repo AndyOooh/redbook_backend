@@ -1,4 +1,5 @@
 import { User } from '../models/user.model.js';
+import { Post } from '../models/post.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
 import { createUserObject } from './auth.helpers.js';
 import { getFriendship } from './users.helpers.js';
@@ -14,18 +15,20 @@ export const getUser = async (req, res, next) => {
   try {
     let user;
     if (type === 'profile') {
-      let foundUser = await User.findOne({ username: username })
+      const foundUser = await User.findOne({ username: username })
         .populate('friends', 'first_name last_name username pictures')
         .lean();
       const friendship = getFriendship(foundUser, userId);
+      const postPicturesArray = await Post.find({ user: foundUser._id, type: 'feed' })
+        .select('images -_id')
+        .lean();
+      const postPictures = postPicturesArray.reduce((prev, curr) => [...prev, ...curr.images], []);
       const { id, rest } = createUserObject(foundUser); // omit ._doc bc lean()
-      user = { id, friendship, ...rest };
+      user = { id, friendship, postPictures, ...rest };
     } else if (type === 'comment') {
-      console.log('if type === comment, username: ', username);
       user = await User.findById(username)
         .select('first_name last_name username pictures gender')
         .exec();
-        console.log('🚀 ~ file: users.controller.js ~ line 28 ~ user', user);
     }
     if (user?.friends) {
       user.friends = user.friends.map(friend => {
@@ -58,25 +61,15 @@ export const updateProfilePhoto = async (req, res, next) => {
     });
   }
 
-  let selector;
-  let field;
-
-  if (type === 'profile') {
-    selector = 'pictures -_id';
-    field = 'pictures';
-  } else if (type === 'cover') {
-    selector = 'covers -_id';
-    field = 'covers';
-  }
+  const isTypeProfile = type === 'profile';
+  const seletor = isTypeProfile ? 'pictures -_id' : 'covers -_id';
+  const field = isTypeProfile ? 'pictures' : 'covers';
 
   let picsToReturn;
   try {
     if (image.usedBefore) {
       const returnedImages = await User.findById(profileUserId).select(selector).exec();
-      // const objvalues = returnedImages[field];
-
       const newImagesArray = returnedImages[field]?.filter(img => img.id !== image.id);
-
       newImagesArray.unshift(image);
       const updatedUser = await User.findByIdAndUpdate(
         id,
