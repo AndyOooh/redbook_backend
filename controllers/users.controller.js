@@ -62,7 +62,7 @@ export const updateProfilePhoto = async (req, res, next) => {
   }
 
   const isTypeProfile = type === 'profile';
-  const seletor = isTypeProfile ? 'pictures -_id' : 'covers -_id';
+  const selector = isTypeProfile ? 'pictures -_id' : 'covers -_id';
   const field = isTypeProfile ? 'pictures' : 'covers';
 
   let picsToReturn;
@@ -294,5 +294,21 @@ export const friendRequest = async (req, res, next) => {
   } catch (error) {
     console.log('🚀users.controller.js ~ line 303 ~ error', error);
     res.json({ error: error });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  console.log('in deleteUser');
+  const { id: userId } = req.params;
+  try {
+    const user = await User.deleteOne({ _id: userId });
+    // const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ message: `User ${userId} deleted`, data: user });
+  } catch (error) {
+    console.log('🚀 ~ file: users.controller.js ~ line 310 ~ error', error);
+    res.status(500).json({ message: 'Error deleting user', error: error });
   }
 };

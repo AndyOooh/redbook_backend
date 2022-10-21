@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { NODE_ENV } from '../config/VARS.js';
+import { Post } from './post.model.js';
 
 const Schema = mongoose.Schema;
 const { ObjectId } = mongoose.Types;
@@ -17,6 +18,11 @@ const userSchema = new Schema(
       required: [true, 'First name is required'],
       trim: true,
       text: true,
+      // validate(value) {
+      //   if(!validator.isAlpha(value)){
+      //     throw new Error('First name must be letters only')
+      //   }
+      // }
     },
     last_name: {
       type: String,
@@ -35,17 +41,24 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
+      unique: true,
       lowercase: true,
       trim: true,
-      text: true,
-      unique: true,
+      // validate(value) {
+      //   if (!validator.isEmail(value)) {
+      //     throw new Error('Email is invalid');
+      //   }
+      // },
     },
-
     password: {
       type: String,
       required: true,
+      validate(value) {
+        if (value.length < (NODE_ENV === 'production' ? 8 : 4)) {
+          throw new Error('Password must be at least 99 characters');
+        }
+      },
     },
-
     pictures: {
       type: Array,
       default: [
@@ -66,7 +79,6 @@ const userSchema = new Schema(
         },
       ],
     },
-    // postPictures: Array,
     gender: {
       type: String,
       required: [true, 'Gender is required'],
@@ -102,6 +114,7 @@ const userSchema = new Schema(
       ref: 'User',
       default: [michaelScottId],
     },
+
     followers: {
       type: [String],
       ref: 'User',
@@ -130,56 +143,96 @@ const userSchema = new Schema(
         },
       },
     ],
+    bio: {
+      type: String,
+      default: '',
+    },
     details: {
-      bio: {
-        type: String,
-        default: '',
+      // nickName: {
+      //   type: String,
+      //   default: '',
+      // },
+      workAndEducation: {
+        work: {
+          job: {
+            type: String,
+            default: '',
+            // visibilty: {
+            //   type: String,
+            //   enum: ['public', 'friends', 'private'],
+            //   default: 'public',
+            // },
+          },
+          workPlace: {
+            type: String,
+            default: "McDonald's",
+          },
+        },
+        education: {
+          highSchool: {
+            type: String,
+            default: '',
+          },
+          college: {
+            type: String,
+            default: '',
+          },
+        },
       },
-      otherName: {
-        type: String,
-        default: '',
+      placesLived: {
+        currentCity: {
+          type: String,
+          default: '',
+        },
+        hometown: {
+          type: String,
+          default: '',
+        },
       },
-      job: {
-        type: String,
-        default: '',
+      familyAndRelationships: {
+        relationshipStatus: {
+          type: String,
+          enum: [
+            'Single',
+            'In a relationship',
+            'Engaged',
+            'Divorced',
+            'Married',
+            "It's Complicated",
+            'Prefer not to say',
+            '',
+          ],
+          default: '',
+        },
+        familyMembers: {
+          type: [String],
+          ref: 'User',
+          // default: [michaelScottId],
+          relationship: {
+            type: String,
+            enum: [
+              'father',
+              'mother',
+              'brother',
+              'sister',
+              'son',
+              'daughter',
+              'husband',
+              'wife',
+              'cuusin',
+              'aunt',
+              'uncle',
+              'grandfather',
+              'grandmother',
+            ],
+          },
+        },
       },
-      workPlace: {
-        type: String,
-        default: "McDonald's",
-      },
-      highSchool: {
-        type: String,
-        default: '',
-      },
-      college: {
-        type: String,
-        default: '',
-      },
-      currentCity: {
-        type: String,
-        default: '',
-      },
-      hometown: {
-        type: String,
-        default: '',
-      },
-      relationshipStatus: {
-        type: String,
-        enum: [
-          'Single',
-          'In a relationship',
-          'Engaged',
-          'Divorced',
-          'Married',
-          "It's Complicated",
-          'Prefer not to say',
-          '',
-        ],
-        default: '',
-      },
-      instagram: {
-        type: String,
-        default: '',
+      socialMedia: {
+        instagram: {
+          type: String,
+          default: '',
+        },
       },
     },
     savedPosts: [
@@ -198,5 +251,12 @@ const userSchema = new Schema(
   // auto-creates: createdAt: Date, updatedAt: Date
   { timestamps: true }
 );
+
+userSchema.pre('deleteOne', function (next) {
+  // userSchema.pre('deleteOne', { query: false, document: true }, function (next) {
+  const userId = this._conditions._id;
+  // Remove all the posts that reference (are created by) the removed person.
+  Post.deleteMany({ user: userId }, next);
+});
 
 export const User = mongoose.model('User', userSchema);

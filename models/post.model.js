@@ -48,6 +48,7 @@ const postsSchema = new Schema(
   }
 );
 
+
 export const Post = mongoose.model('Post', postsSchema);
 
 // export const User = mongoose.model('User', userSchema);
