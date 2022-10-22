@@ -3,6 +3,7 @@ import { Post } from '../models/post.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
 import { createUserObject } from './auth.helpers.js';
 import { getFriendship } from './users.helpers.js';
+import { updateNestedObject } from '../utils/helperFunctions.js';
 
 // @desc get a user
 // @route GET /api/users/:id
@@ -106,11 +107,20 @@ export const updateProfilePhoto = async (req, res, next) => {
 // @route PUT /api/users/:id/update
 // @access Private
 export const updateUser = async (req, res, next) => {
-  const { id, username } = req.user;
+  const { id } = req.user;
   const { id: profileUserId } = req.params;
-  const { field } = req.query;
+  const { path } = req.query;
+  const [key, value] = Object.entries(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
+
+  console.log('🚀 ~ file: users.controller.js ~ line 114 ~ value', value)
+  console.log('🚀 ~ file: users.controller.js ~ line 113 ~ req.query', req.query);
+  const { body } = req;
+  console.log('🚀 ~ file: users.controller.js ~ line 110 ~ id', id);
+  console.log('🚀 ~ file: users.controller.js ~ line 112 ~ path', path);
+  console.log('🚀 ~ file: users.controller.js ~ line 113 ~ body', body);
 
   if (profileUserId !== id) {
+    console.log('🚀 ~ file: users.controller.js ~ line 118 ~ profileUserId', profileUserId);
     return res.status(401).json({
       message: 'You are not authorized to update this profile',
     });
@@ -118,12 +128,15 @@ export const updateUser = async (req, res, next) => {
 
   try {
     let user = await User.findById(id).exec();
-    user[field] = { ...user[field], ...req.body };
-    const updatedUserDetails = await user.save();
+    updateNestedObject(user, path, value);
+    await user.save();
 
-    return res
-      .status(200)
-      .json({ message: 'User updated successfully', userData: updatedUserDetails[field] });
+    return (
+      res
+        .status(200)
+        // .json({ message: 'User updated successfully', userData: updatedUserDetails[path] });
+        .json({ message: 'User updated successfully', user })
+    );
   } catch (error) {
     console.log('error', error);
   }

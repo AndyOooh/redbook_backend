@@ -14,7 +14,7 @@ import {
   resetCodeEmailOptions,
   verificationEmailOPtions,
 } from './auth.helpers.js';
-import { nameCase } from '../utils/functions.js';
+import { nameCase } from '../utils/helperFunctions.js';
 
 // ---------------------------------------- /logout ----------------------------------------
 // @desc Log a user out
@@ -160,22 +160,30 @@ export const register = async (req, res, next) => {
 
     // Update Michael Scott to be first friend:
     const firstFriendId = michaelScottId;
-    if (firstFriendId) {
-      const firstFriend = await User.findById(firstFriendId).exec();
+    const firstFriend = await User.findById(firstFriendId).exec();
+    if (!firstFriend) {
+      null;
+    } else {
       firstFriend.friends.push(createdUser._id);
       firstFriend.following.push(createdUser._id);
       firstFriend.followers.push(createdUser._id);
       await firstFriend.save();
     }
 
+    console.log('past firstFriend');
+
     // Update Dwight Schrute to send first friend request:
     const firstRequestorId = dwightId;
-    if (firstRequestorId) {
-      const firstRequestor = await User.findById(firstRequestorId).exec();
+    const firstRequestor = await User.findById(firstRequestorId).exec();
+    if (!firstRequestor) {
+      null;
+    } else {
       firstRequestor.following.push(createdUser._id);
       firstRequestor.requestsSent.push(createdUser._id);
       await firstRequestor.save();
     }
+
+    console.log('past requestor');
 
     // Send response
     res.status(200).json({

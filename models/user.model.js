@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 const { ObjectId } = mongoose.Types;
 
 export const michaelScottId =
-  NODE_ENV === 'production' ? '63493a0684e23607bcf37abb' : '634946b71aba3ef65d13e34a';
+  NODE_ENV === 'production' ? '63493a0684e23607bcf37abb' : '6352bc4e6e4cd057299ec010';
 
 export const dwightId =
   NODE_ENV === 'production' ? '63495640ae09b99a7e08cb0b' : '634948460ec050e4770551b3';
