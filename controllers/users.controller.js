@@ -112,15 +112,7 @@ export const updateUser = async (req, res, next) => {
   const { path } = req.query;
   const [key, value] = Object.entries(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
 
-  console.log('🚀 ~ file: users.controller.js ~ line 114 ~ value', value)
-  console.log('🚀 ~ file: users.controller.js ~ line 113 ~ req.query', req.query);
-  const { body } = req;
-  console.log('🚀 ~ file: users.controller.js ~ line 110 ~ id', id);
-  console.log('🚀 ~ file: users.controller.js ~ line 112 ~ path', path);
-  console.log('🚀 ~ file: users.controller.js ~ line 113 ~ body', body);
-
   if (profileUserId !== id) {
-    console.log('🚀 ~ file: users.controller.js ~ line 118 ~ profileUserId', profileUserId);
     return res.status(401).json({
       message: 'You are not authorized to update this profile',
     });
