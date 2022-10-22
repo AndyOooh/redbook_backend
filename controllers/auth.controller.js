@@ -107,95 +107,7 @@ export const refreshAccessToken = async (req, res) => {
   });
 };
 
-// ---------------------------------------- /register ----------------------------------------
-// @desc Create new user
-// @route POST /api/auth/register
-// @access Public
-export const register = async (req, res, next) => {
-  // Error handling -------------------------------------------------------
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error();
-    // error.message = errors[0].msg;
-    error.message = errors.errors.map(err => err.msg).join(', ');
-    error.statusCode = 422;
-    error.data = errors.array();
-    return next(error);
-  }
 
-  const { first_name, last_name, email, password } = req.body;
-  const first_name_cased = nameCase(first_name);
-  const last_name_cased = nameCase(last_name);
-  req.body.first_name = first_name_cased;
-  req.body.last_name = last_name_cased;
-
-  const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
-
-  // Save user to database
-  try {
-    const createdUser = await User.create({
-      ...req.body,
-      username: first_name + last_name + Math.random().toString(),
-      password: await bcrypt.hash(password, 10),
-      refreshToken: newRefreshToken,
-    });
-
-    console.log('createdUser: ', createdUser);
-
-    const { id, rest } = createUserObject(createdUser._doc);
-
-    // Send verification email
-    const { subject, html } = verificationEmailOPtions(id, first_name);
-    await sendEmail(email, subject, html);
-
-    res.cookie('refresh_token', newRefreshToken, {
-      httpOnly: true,
-    });
-
-    const newAccessToken = generateToken(
-      { username: rest.username, id },
-      ACCESS_TOKEN_SECRET,
-      '7d'
-    );
-
-    // Update Michael Scott to be first friend:
-    const firstFriendId = michaelScottId;
-    const firstFriend = await User.findById(firstFriendId).exec();
-    if (!firstFriend) {
-      null;
-    } else {
-      firstFriend.friends.push(createdUser._id);
-      firstFriend.following.push(createdUser._id);
-      firstFriend.followers.push(createdUser._id);
-      await firstFriend.save();
-    }
-
-    console.log('past firstFriend');
-
-    // Update Dwight Schrute to send first friend request:
-    const firstRequestorId = dwightId;
-    const firstRequestor = await User.findById(firstRequestorId).exec();
-    if (!firstRequestor) {
-      null;
-    } else {
-      firstRequestor.following.push(createdUser._id);
-      firstRequestor.requestsSent.push(createdUser._id);
-      await firstRequestor.save();
-    }
-
-    console.log('past requestor');
-
-    // Send response
-    res.status(200).json({
-      user: { id, ...rest },
-      accessToken: newAccessToken,
-    });
-  } catch (error) {
-    console.log('in register, error:', error);
-    // delete user in db if verification email failed?
-    return next(error);
-  }
-};
 
 // ---------------------------------------- /login ----------------------------------------
 // @desc Log user in
@@ -314,23 +226,7 @@ export const resendVerificationEmail = async (req, res, next) => {
   }
 };
 
-export const findUser = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email }).select('-password');
-    if (!user) {
-      return res.status(400).json({
-        message: 'No account found with that email.',
-      });
-    }
-    return res.status(200).json({
-      email: user.email,
-      picture: user.picture,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+
 
 export const sendResetPasswordCode = async (req, res, next) => {
   const { email } = req.body;

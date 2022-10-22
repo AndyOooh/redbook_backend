@@ -1,7 +1,7 @@
 import { body } from 'express-validator';
 import { User } from '../../models/user.model.js';
 
-const authValidator = {
+const usersValidator = {
   register: [
     body('first_name')
       .trim()
@@ -11,18 +11,7 @@ const authValidator = {
       .trim()
       .isLength({ min: 2, max: 30 })
       .withMessage('Last name must be minimum 2 characters.'),
-    // body('username')
-    //   .trim()
-    //   .isLength({ min: 3 })
-    //   .withMessage('Username must be minimum 3 characters long')
-    //   .custom((value, { req }) => {
-    //     return User.findOne({ username: value }).then(user => {
-    //       //refactore like email?
-    //       if (user) {
-    //         return Promise.reject('Username already exists');
-    //       }
-    //     });
-    //   }),
+
     body('email')
       .normalizeEmail()
       .isEmail()
@@ -39,13 +28,6 @@ const authValidator = {
       .isLength({ min: 3, max: 40 })
       .withMessage('Password must be 3 - 40 characters.'),
   ],
-
-  // login: [
-  //   body('email')
-  //     .required('Email is required'),
-  //   body('password')
-  //     .required('Password is required')
-  // ],
 };
 
-export default authValidator;
+export default usersValidator;

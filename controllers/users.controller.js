@@ -5,6 +5,96 @@ import { createUserObject } from './auth.helpers.js';
 import { getFriendship } from './users.helpers.js';
 import { updateNestedObject } from '../utils/helperFunctions.js';
 
+// ---------------------------------------- /register ----------------------------------------
+// @desc Create new user
+// @route POST /api/auth/register
+// @access Public
+export const createUser = async (req, res, next) => {
+  // Error handling -------------------------------------------------------
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error();
+    // error.message = errors[0].msg;
+    error.message = errors.errors.map(err => err.msg).join(', ');
+    error.statusCode = 422;
+    error.data = errors.array();
+    return next(error);
+  }
+
+  const { first_name, last_name, email, password } = req.body;
+  const first_name_cased = nameCase(first_name);
+  const last_name_cased = nameCase(last_name);
+  req.body.first_name = first_name_cased;
+  req.body.last_name = last_name_cased;
+
+  const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
+
+  // Save user to database
+  try {
+    const createdUser = await User.create({
+      ...req.body,
+      username: first_name + last_name + Math.random().toString(),
+      password: await bcrypt.hash(password, 10),
+      refreshToken: newRefreshToken,
+    });
+
+    console.log('createdUser: ', createdUser);
+
+    const { id, rest } = createUserObject(createdUser._doc);
+
+    // Send verification email
+    const { subject, html } = verificationEmailOPtions(id, first_name);
+    await sendEmail(email, subject, html);
+
+    res.cookie('refresh_token', newRefreshToken, {
+      httpOnly: true,
+    });
+
+    const newAccessToken = generateToken(
+      { username: rest.username, id },
+      ACCESS_TOKEN_SECRET,
+      '7d'
+    );
+
+    // Update Michael Scott to be first friend:
+    const firstFriendId = michaelScottId;
+    const firstFriend = await User.findById(firstFriendId).exec();
+    if (!firstFriend) {
+      null;
+    } else {
+      firstFriend.friends.push(createdUser._id);
+      firstFriend.following.push(createdUser._id);
+      firstFriend.followers.push(createdUser._id);
+      await firstFriend.save();
+    }
+
+    console.log('past firstFriend');
+
+    // Update Dwight Schrute to send first friend request:
+    const firstRequestorId = dwightId;
+    const firstRequestor = await User.findById(firstRequestorId).exec();
+    if (!firstRequestor) {
+      null;
+    } else {
+      firstRequestor.following.push(createdUser._id);
+      firstRequestor.requestsSent.push(createdUser._id);
+      await firstRequestor.save();
+    }
+
+    console.log('past requestor');
+
+    // Send response
+    res.status(200).json({
+      user: { id, ...rest },
+      accessToken: newAccessToken,
+    });
+  } catch (error) {
+    console.log('in register, error:', error);
+    // delete user in db if verification email failed?
+    return next(error);
+  }
+};
+
 // @desc get a user
 // @route GET /api/users/:id
 // @access Public
@@ -106,10 +196,11 @@ export const updateProfilePhoto = async (req, res, next) => {
 // @desc update a user document
 // @route PUT /api/users/:id/update
 // @access Private
-export const updateUser = async (req, res, next) => {
+export const updateUser = async (req, res) => {
   const { id } = req.user;
   const { id: profileUserId } = req.params;
   const { path } = req.query;
+  console.log('🚀 ~ file: users.controller.js ~ line 210 ~ req.body', req.body);
   const [key, value] = Object.entries(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
 
   if (profileUserId !== id) {
