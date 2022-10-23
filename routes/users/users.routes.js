@@ -16,7 +16,7 @@ import usersValidator from './users.validator.js';
 const router = express.Router();
 
 // router.get('/', isAuth, getUsers);
-router.post('/register', usersValidator.register, createUser);
+router.post('/', usersValidator.register, createUser);
 router.route('/:username').get(isAuth, getUser);
 router.route('/:id').put(isAuth, updateUser).delete(deleteUser);
 

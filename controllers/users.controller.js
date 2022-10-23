@@ -1,9 +1,17 @@
-import { User } from '../models/user.model.js';
+import bcrypt from 'bcrypt';
+import { validationResult } from 'express-validator';
+import jwt from 'jsonwebtoken';
+
+
+import { dwightId, michaelScottId, User } from '../models/user.model.js';
 import { Post } from '../models/post.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
-import { createUserObject } from './auth.helpers.js';
+import { createUserObject, verificationEmailOPtions } from './auth.helpers.js';
 import { getFriendship } from './users.helpers.js';
-import { updateNestedObject } from '../utils/helperFunctions.js';
+import { nameCase, updateNestedObject } from '../utils/helperFunctions.js';
+import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, USEEMAIL } from '../config/VARS.js';
+import { generateToken } from '../services/token.service.js';
+import { sendEmail } from '../services/email.service.js';
 
 // ---------------------------------------- /register ----------------------------------------
 // @desc Create new user
@@ -43,8 +51,10 @@ export const createUser = async (req, res, next) => {
     const { id, rest } = createUserObject(createdUser._doc);
 
     // Send verification email
-    const { subject, html } = verificationEmailOPtions(id, first_name);
-    await sendEmail(email, subject, html);
+    if (USEEMAIL === 'true') {
+      const { subject, html } = verificationEmailOPtions(id, first_name);
+      await sendEmail(email, subject, html);
+    }
 
     res.cookie('refresh_token', newRefreshToken, {
       httpOnly: true,
@@ -67,8 +77,6 @@ export const createUser = async (req, res, next) => {
       firstFriend.followers.push(createdUser._id);
       await firstFriend.save();
     }
-
-    console.log('past firstFriend');
 
     // Update Dwight Schrute to send first friend request:
     const firstRequestorId = dwightId;
@@ -201,7 +209,7 @@ export const updateUser = async (req, res) => {
   const { id: profileUserId } = req.params;
   const { path } = req.query;
   console.log('🚀 ~ file: users.controller.js ~ line 210 ~ req.body', req.body);
-  const [key, value] = Object.entries(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
+  const value = Object.values(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
 
   if (profileUserId !== id) {
     return res.status(401).json({
@@ -214,12 +222,7 @@ export const updateUser = async (req, res) => {
     updateNestedObject(user, path, value);
     await user.save();
 
-    return (
-      res
-        .status(200)
-        // .json({ message: 'User updated successfully', userData: updatedUserDetails[path] });
-        .json({ message: 'User updated successfully', user })
-    );
+    return res.status(200).json({ message: 'User updated successfully', user }); // Maye just send back fields that were updated? frontend can handle this.
   } catch (error) {
     console.log('error', error);
   }

@@ -169,11 +169,11 @@ const userSchema = new Schema(
           },
         },
         education: {
-          highSchool: {
+          college: {
             type: String,
             default: '',
           },
-          college: {
+          highSchool: {
             type: String,
             default: '',
           },

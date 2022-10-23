@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 export const {
   NODE_ENV,
+  USEEMAIL,
   PORT,
   ACCESS_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET,

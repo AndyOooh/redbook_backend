@@ -2,8 +2,8 @@ import bcrypt from 'bcrypt';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 
-import { ACCESS_TOKEN_SECRET, NODE_ENV, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
-import { dwightId, michaelScottId, User } from '../models/user.model.js';
+import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
+import { User } from '../models/user.model.js';
 import { Code } from '../models/code.model.js';
 
 import { sendEmail } from '../services/email.service.js';
