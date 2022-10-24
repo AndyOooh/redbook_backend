@@ -1,8 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 
 // import { upload } from '../config/cloudinary.js';
+import mongoose from 'mongoose';
 import { Post } from '../models/post.model.js';
+import { Reaction } from '../models/reaction.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
+// import { Reaction } from '../models/reaction.model.js';
+const { ObjectId } = mongoose.Types;
 
 // TODO use asynchandler or create one
 // TODO refactor if(!post)
@@ -18,14 +22,19 @@ export const createPost = async (req, res, next) => {
 
   const checkedBackground = req.body.background === 'null' ? null : req.body.background;
 
-  const postId = uuidv4();
+  // const postId = uuidv4();
+  const postId = new ObjectId();
 
   let images;
   try {
     if (type === 'cover' || type === 'profile') {
       images = [JSON.parse(req.body.image)]; // TODO: figure out the correct format. Maybe from request payload (ImageCropper)
     } else if (type === 'feed') {
-      images = await uploadToCloudinary({ files, username: user.username, postId });
+      images = await uploadToCloudinary({
+        files,
+        username: user.username,
+        postId: postId.toString(),
+      });
     }
 
     // Create post
@@ -48,28 +57,24 @@ export const createPost = async (req, res, next) => {
 // @route PUT /api/posts:id
 // @access Private
 export const createComment = async (req, res, next) => {
-  console.log('in createComment------------------------------------------------------');
-  console.log('req.body: ', req.body);
-
   const { user, files } = req;
   const { text } = req.body;
   const postId = req.params.id;
   const commentId = uuidv4();
-
-  console.log('req.params: ', req.params);
-  console.log('files: ', files);
 
   try {
     const images = await uploadToCloudinary({ files, username: user.username, postId, commentId });
 
     const comment = { _id: commentId, text, images, commentBy: user.id };
 
-    // Create comment
-    const savedComment = await Post.findByIdAndUpdate(postId, {
-      $push: { comments: comment },
-    });
-    console.log('Post with new comment: ', savedComment);
-    res.status(200).json(savedComment);
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    post.comments.unshift(comment);
+    const savedPost = await post.save();
+
+    res.status(200).json({ message: 'Comment created successfully', savedPost });
   } catch (error) {
     console.log('error: ', error);
   }
@@ -93,6 +98,7 @@ export const getPosts = async (req, res, next) => {
     const posts = await Post.find(filter)
       .populate('user', 'first_name last_name pictures covers username gender')
       .populate('comments.commentBy', 'first_name last_name pictures')
+      .populate('reactions')
       .sort({ createdAt: -1 })
       .exec();
     const { _id: id, ...rest } = posts;
@@ -129,22 +135,68 @@ export const getPost = async (req, res, next) => {
 export const deletePost = async (req, res, next) => {
   const { id: userId } = req.user;
   const postId = req.params.id;
+  console.log('🚀 ~ file: posts.controller.js ~ line 134 ~ userId', userId);
   try {
     const postToDelete = await Post.findById(postId);
+    console.log('🚀 ~ file: posts.controller.js ~ line 137 ~ postToDelete', postToDelete);
     if (!postToDelete) {
       const error = new Error('Post not found');
       error.status = 404;
       throw error; //WHYYYYY not next(error)? We are in async
       // next(error);
-    } else if (postToDelete.user.toString() !== userId) {
+    } else if (postToDelete.user != userId) {
+      // not type checking bc userId is string.
       const error = new Error('Unauthorized');
       error.status = 401;
       throw error;
     }
-    await Post.findByIdAndDelete(postId);
+    await Post.deleteOne({ _id: postId });
     res.status(200).json({ message: 'Deleted post', post: postToDelete });
   } catch (error) {
     console.log('🚀 deletePost error: ', error);
     next(error);
+  }
+};
+
+export const createPostReaction = async (req, res, next) => {
+  console.log('🚀 createPostReaction req.body');
+  const { id: userId } = req.user;
+  const { type } = req.body;
+  const { id: postId } = req.params;
+  console.log('🚀 ~ file: posts.controller.js ~ line 156 ~ postId', postId);
+  console.log('🚀 ~ file: posts.controller.js ~ line 153 ~ reaction', type);
+
+  try {
+    const existingReaction = await Reaction.findOne({ post: postId, user: userId });
+    console.log('🚀 ~ file: posts.controller.js ~ line 161 ~ existingReaction', existingReaction);
+    if (existingReaction) {
+      if (existingReaction.type === type) {
+        await Reaction.deleteOne({ _id: existingReaction._id });
+        return res.status(200).json({ message: 'Reaction deleted' });
+      } else {
+        // have to add the runValidators option to make sure the type is one of the enum values when not using document.save().
+        await Reaction.updateOne(
+          { _id: existingReaction._id }, // where
+          { type: type }, // what to update
+          { runValidators: true } // options
+        );
+        return res.status(200).json({ message: 'Reaction updated' });
+      }
+    }
+
+    const newReaction = await Reaction.create({
+      type: type,
+      post: postId,
+      user: userId,
+    });
+
+    const post = await Post.findById(postId);
+    post.reactions.push(newReaction._id);
+    await post.save();
+
+    res.status(200).json({ message: 'Reaction created' });
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong. Reaction not created' });
+    console.log('error: ', error);
   }
 };

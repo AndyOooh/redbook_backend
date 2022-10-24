@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { NODE_ENV } from '../config/VARS.js';
 import { Post } from './post.model.js';
+import { Reaction } from './reaction.model.js';
 
 const Schema = mongoose.Schema;
 const { ObjectId } = mongoose.Types;
@@ -205,7 +206,7 @@ const userSchema = new Schema(
           default: '',
         },
         familyMembers: {
-          type: [String],
+          type: [ObjectId],
           ref: 'User',
           // default: [michaelScottId],
           relationship: {
@@ -255,8 +256,9 @@ const userSchema = new Schema(
 userSchema.pre('deleteOne', function (next) {
   // userSchema.pre('deleteOne', { query: false, document: true }, function (next) {
   const userId = this._conditions._id;
-  // Remove all the posts that reference (are created by) the removed person.
-  Post.deleteMany({ user: userId }, next);
+  // Remove all the posts and reactions that reference (are created by) the removed person.
+  Post.deleteMany({ user: userId });
+  Reaction.deleteMany({ user: userId }, next);
 });
 
 export const User = mongoose.model('User', userSchema);

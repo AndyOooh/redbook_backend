@@ -5,9 +5,11 @@ import {
   getPost,
   getPosts,
   createComment,
+  createPostReaction,
   // updateComment,
   // deleteComment,
 } from '../controllers/posts.controller.js';
+// import { createPostReaction } from '../controllers/reactions.controller.js';
 
 import { isAuth } from '../middleware/isAuth.js';
 import { multiUploader } from '../middleware/multerMulti.js';
@@ -20,5 +22,7 @@ router.route('/:id').get(getPost).put(isAuth, multiUploader, createComment).dele
 router.route('/:id/:commentId');
 // .put(isAuth, updateComment)
 // .delete(isAuth, deleteComment);
+
+router.route('/:id/reaction').post(isAuth, createPostReaction);
 
 export default router;

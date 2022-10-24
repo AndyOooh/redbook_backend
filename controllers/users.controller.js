@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 
-
 import { dwightId, michaelScottId, User } from '../models/user.model.js';
 import { Post } from '../models/post.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
@@ -208,10 +207,9 @@ export const updateUser = async (req, res) => {
   const { id } = req.user;
   const { id: profileUserId } = req.params;
   const { path } = req.query;
-  console.log('🚀 ~ file: users.controller.js ~ line 210 ~ req.body', req.body);
   const value = Object.values(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
 
-  if (profileUserId !== id) {
+  if (profileUserId != id) {
     return res.status(401).json({
       message: 'You are not authorized to update this profile',
     });
@@ -224,6 +222,7 @@ export const updateUser = async (req, res) => {
 
     return res.status(200).json({ message: 'User updated successfully', user }); // Maye just send back fields that were updated? frontend can handle this.
   } catch (error) {
+    res.status(400).json({ message: 'Error updating user', error });
     console.log('error', error);
   }
 };
