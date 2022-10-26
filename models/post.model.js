@@ -25,7 +25,7 @@ const postsSchema = new Schema(
     },
     comments: [
       {
-        _id: String,
+        _id: ObjectId,
         text: {
           type: String,
         },

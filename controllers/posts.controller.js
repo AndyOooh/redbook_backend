@@ -53,33 +53,6 @@ export const createPost = async (req, res, next) => {
   }
 };
 
-// @desc Update post
-// @route PUT /api/posts:id
-// @access Private
-export const createComment = async (req, res, next) => {
-  const { user, files } = req;
-  const { text } = req.body;
-  const postId = req.params.id;
-  const commentId = uuidv4();
-
-  try {
-    const images = await uploadToCloudinary({ files, username: user.username, postId, commentId });
-
-    const comment = { _id: commentId, text, images, commentBy: user.id };
-
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-    post.comments.unshift(comment);
-    const savedPost = await post.save();
-
-    res.status(200).json({ message: 'Comment created successfully', savedPost });
-  } catch (error) {
-    console.log('error: ', error);
-  }
-};
-
 // @desc get all posts
 // @route GET /api/posts
 // @access Public
@@ -197,6 +170,56 @@ export const createPostReaction = async (req, res, next) => {
     res.status(200).json({ message: 'Reaction created' });
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong. Reaction not created' });
+    console.log('error: ', error);
+  }
+};
+
+// @desc Update post
+// @route PUT /api/posts:id
+// @access Private
+export const createComment = async (req, res, next) => {
+  const { user, files } = req;
+  const { text } = req.body;
+  const postId = req.params.id;
+  const commentId = uuidv4();
+
+  try {
+    const images = await uploadToCloudinary({ files, username: user.username, postId, commentId });
+
+    const comment = { _id: commentId, text, images, commentBy: user.id };
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    post.comments.unshift(comment);
+    const savedPost = await post.save();
+
+    res.status(200).json({ message: 'Comment created successfully', savedPost });
+  } catch (error) {
+    console.log('error: ', error);
+  }
+};
+
+export const deleteComment = async (res, req) => {
+  const { postId, commentId } = req.params;
+  const { id: userId } = req.user;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    const comment = post.comments.find((comment) => comment._id === commentId);
+    if (comment.commentBy != userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    post.comments.filter(comment => comment._id != commentId ); // shallow comparison again. Should be fine for now.
+    await post.save();
+
+    res.status(200).json({ message: 'Comment deleted successfully', post });
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong. Comment not deleted' });
     console.log('error: ', error);
   }
 };
