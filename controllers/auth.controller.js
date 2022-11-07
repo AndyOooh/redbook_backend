@@ -107,8 +107,6 @@ export const refreshAccessToken = async (req, res) => {
   });
 };
 
-
-
 // ---------------------------------------- /login ----------------------------------------
 // @desc Log user in
 // @route POST /api/auth/login
@@ -143,7 +141,11 @@ export const login = async (req, res, next) => {
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
     console.log('🚀 ~ file: auth.controller.js ~ line 220 ~ newRefreshToken', newRefreshToken);
-    const newAccessToken = generateToken({ email, id }, ACCESS_TOKEN_SECRET, '12h');
+    const newAccessToken = generateToken(
+      { email, id, username: existingUser.username },
+      ACCESS_TOKEN_SECRET,
+      '7d'
+    );
 
     existingUser.refreshToken = newRefreshToken;
     await existingUser.save();
@@ -225,8 +227,6 @@ export const resendVerificationEmail = async (req, res, next) => {
     return next(error);
   }
 };
-
-
 
 export const sendResetPasswordCode = async (req, res, next) => {
   const { email } = req.body;

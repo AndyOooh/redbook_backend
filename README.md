@@ -28,7 +28,7 @@ This project is for showcasing my capabilities as a full stack web developer.
 
 It is inspired by [Build Facebook clone with REACT JS AND THE MERN STACK 2022](https://www.udemy.com/course/build-facebook-clone-and-master-react-js-mern-stack-2022/). 
 
-However, it differs in implementation (and sometomes choice) of technologies and techniques. 
+However, it differs in implementation (and some) choice of technologies and techniques. 
 
 ## Description
 This project is an imitation of Facebook without the full suite of features facebook has. Refer to [features](#features) for a list of implemented and planned features.

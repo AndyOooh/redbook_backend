@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
 import { validationResult } from 'express-validator';
-import jwt from 'jsonwebtoken';
+// import jwt from 'jsonwebtoken';
 
 import { dwightId, michaelScottId, User } from '../models/user.model.js';
 import { Post } from '../models/post.model.js';
@@ -12,6 +13,7 @@ import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, USEEMAIL } from '../config/V
 import { generateToken } from '../services/token.service.js';
 import { sendEmail } from '../services/email.service.js';
 
+const { ObjectId } = mongoose.Types;
 // ---------------------------------------- /register ----------------------------------------
 // @desc Create new user
 // @route POST /api/auth/register
@@ -40,6 +42,7 @@ export const createUser = async (req, res, next) => {
   try {
     const createdUser = await User.create({
       ...req.body,
+      full_name: `${first_name_cased} ${last_name_cased}`,
       username: first_name + last_name + Math.random().toString(),
       password: await bcrypt.hash(password, 10),
       refreshToken: newRefreshToken,
@@ -60,7 +63,7 @@ export const createUser = async (req, res, next) => {
     });
 
     const newAccessToken = generateToken(
-      { username: rest.username, id },
+      { email, id, username: rest.username },
       ACCESS_TOKEN_SECRET,
       '7d'
     );
@@ -88,8 +91,6 @@ export const createUser = async (req, res, next) => {
       await firstRequestor.save();
     }
 
-    console.log('past requestor');
-
     // Send response
     res.status(200).json({
       user: { id, ...rest },
@@ -109,6 +110,7 @@ export const getUser = async (req, res, next) => {
   const { username } = req.params;
   const { type } = req.query;
   const { id: userId } = req.user;
+  console.log('🚀 ~ file: users.controller.js ~ line 115 ~ username', username);
 
   try {
     let user;
@@ -116,6 +118,9 @@ export const getUser = async (req, res, next) => {
       const foundUser = await User.findOne({ username: username })
         .populate('friends', 'first_name last_name username pictures')
         .lean();
+      if (!foundUser) {
+        res.status(404).json({ message: 'User not found' });
+      }
       const friendship = getFriendship(foundUser, userId);
       const postPicturesArray = await Post.find({ user: foundUser._id, type: 'feed' })
         .select('images -_id')
@@ -206,21 +211,48 @@ export const updateProfilePhoto = async (req, res, next) => {
 export const updateUser = async (req, res) => {
   const { id } = req.user;
   const { id: profileUserId } = req.params;
-  const { path } = req.query;
-  const value = Object.values(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many
+  console.log('🚀 ~ file: users.controller.js ~ line 214 ~ profileUserId', profileUserId, typeof profileUserId);
+  console.log('req.body', req.body);
 
-  if (profileUserId != id) {
+  if (profileUserId != 'undefined' && profileUserId != id) {
     return res.status(401).json({
       message: 'You are not authorized to update this profile',
     });
   }
 
-  try {
-    let user = await User.findById(id).exec();
-    updateNestedObject(user, path, value);
-    await user.save();
+  let user = await User.findById(id).exec();
+  if (!user) return res.status(404).json({ message: 'User not found' });
 
-    return res.status(200).json({ message: 'User updated successfully', user }); // Maye just send back fields that were updated? frontend can handle this.
+  const { path, isArray } = req.query;
+
+  try {
+    if (!path || path === '' || path === 'undefined') {
+      let [field, value] = Object.entries(req.body)[0];
+      if (isArray === 'true') {
+        console.log('is array, no path ******************************');
+        // user.update({ $addToSet: { field: value } });
+        // user.updateOne({ $push: { [field]: value } });
+        // user.updateOne({ $push: { search: 'akkaka' } });
+        // user[field] = [value, ...user[field]];
+        const updatedUser = await User.findByIdAndUpdate(
+          id,
+          { $addToSet: { [field]: value } },
+          { new: true }
+        ).exec();
+        console.log('🚀 ~ file: users.controller.js ~ line 240 ~ updatedUser', updatedUser);
+        return res.status(200).json({ message: 'User updated successfully', updatedUser });
+      } else {
+        console.log('in else');
+        user[field] = value;
+      }
+    } else {
+      let value = Object.values(req.body)[0]; // to allow multiple fields updated at once, we need to iterate over req.body and use updateNestedObject on every uteration. or just update many. now we are doing neither.
+      updateNestedObject(user, path, value, isArray);
+    }
+    await user.save();
+    return res.status(200).json({ message: 'User updated successfully', user }); // Maybe just send back fields that were updated? frontend can handle this.
+
+    // return res.status(200).json({ message: 'User updated successfully', user }); // Maye just send back fields that were updated? frontend can handle this.
   } catch (error) {
     res.status(400).json({ message: 'Error updating user', error });
     console.log('error', error);
@@ -396,17 +428,87 @@ export const friendRequest = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res) => {
-  console.log('in deleteUser');
   const { id: userId } = req.params;
   try {
     const user = await User.deleteOne({ _id: userId });
-    // const user = await User.findByIdAndDelete(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    res.clearCookie('refresh_token', { httpOnly: true });
     res.status(200).json({ message: `User ${userId} deleted`, data: user });
   } catch (error) {
     console.log('🚀 ~ file: users.controller.js ~ line 310 ~ error', error);
     res.status(500).json({ message: 'Error deleting user', error: error });
+  }
+};
+
+export const searchUserName = async (req, res) => {
+  console.log('in searchUsers************************');
+  const { term } = req.query;
+  console.log('🚀 ~ file: users.controller.js ~ line 421 ~ term', term);
+  try {
+    const users = await User.aggregate([
+      {
+        $search: {
+          index: 'fullName',
+          compound: {
+            should: [
+              {
+                autocomplete: {
+                  path: 'full_name',
+                  query: term,
+                  // fuzzy: { maxEdits: 2 },
+                  score: { boost: { value: 3 } },
+                },
+              },
+              {
+                text: {
+                  path: 'last_name',
+                  query: term,
+                  fuzzy: { maxEdits: 1 },
+                  // score: { boost: { value: 3 } },
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          full_name: 1,
+          pictures: 1,
+          score: { $meta: 'searchScore' },
+          username: 1,
+        },
+      },
+    ]);
+    console.log('🚀 ~ file: users.controller.js ~ line 441 ~ users', users);
+    // res.status(200).json({ message: 'Search complete', users });
+    res.status(200).json(users);
+  } catch (error) {
+    console.log('🚀 ~ file: users.controller.js ~ line 310 ~ error', error);
+    res.status(500).json({ message: 'Error searching users', error: error });
+  }
+};
+
+export const getUsers = async (req, res, next) => {
+  const queryString = req.query;
+  const { _id } = req.query;
+
+  const userObjectIds = _id?.split(',').map(id => ObjectId(id.trim()));
+  let users;
+  try {
+    if (_id) {
+      users = await User.find({ _id: { $in: userObjectIds } }).select(
+        'full_name username pictures'
+      );
+    } else {
+      users = await User.find({ search }); // not finished.
+    }
+    console.log('🚀 ~ file: users.controller.js ~ line 507 ~ users', users);
+    res.status(200).json(users);
+  } catch (error) {
+    console.log('🚀 ~ file: users.controller.js ~ line 503 ~ error', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };

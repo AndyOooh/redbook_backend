@@ -1,8 +1,8 @@
 export const getFriendship = (profileUser, currentUserId) => {
   return {
-    friends: profileUser.friends.some(friend => friend._id == currentUserId), //has to be shallow equal bc ObjctId
-    following: profileUser.followers.includes(currentUserId),
-    requestSent: profileUser.requestsReceived.includes(currentUserId),
-    requestReceived: profileUser.requestsSent.includes(currentUserId),
+    friends: profileUser.friends?.some(objectId => objectId.toString() == currentUserId), // Showing off two different ways of comaring ObjectId's to string
+    following: profileUser.followers?.some(objectId => objectId.toString() == currentUserId),
+    requestSent: profileUser.requestsReceived?.some(objectId => objectId.equals(currentUserId)),
+    requestReceived: profileUser.requestsSent?.some(objectId => objectId.equals(currentUserId)),
   };
 };

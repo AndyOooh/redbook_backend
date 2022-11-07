@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { Post } from '../models/post.model.js';
 import { Reaction } from '../models/reaction.model.js';
 import { uploadToCloudinary } from '../services/cloudinary.service.js';
+import { Comment } from '../models/comment.model.js';
 // import { Reaction } from '../models/reaction.model.js';
 const { ObjectId } = mongoose.Types;
 
@@ -70,7 +71,19 @@ export const getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find(filter)
       .populate('user', 'first_name last_name pictures covers username gender')
-      .populate('comments.commentBy', 'first_name last_name pictures')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'user',
+          select: 'first_name last_name pictures',
+          perDocumentLimit: 1,
+          // limit: {
+          //   path: 'comments.pictures',
+          // },
+        },
+      })
+      // .populate('comments')
+      // .populate('comments.user', 'first_name last_name pictures')
       .populate('reactions')
       .sort({ createdAt: -1 })
       .exec();
@@ -181,19 +194,29 @@ export const createComment = async (req, res, next) => {
   const { user, files } = req;
   const { text } = req.body;
   const postId = req.params.id;
-  const commentId = uuidv4();
+  const commentId = new ObjectId();
+
+  // create comment model. make sure to delete comments on delet post and user. also, populate comment when getting post/posts <-- maybe this can be set with hook?
 
   try {
-    const images = await uploadToCloudinary({ files, username: user.username, postId, commentId });
-
-    const comment = { _id: commentId, text, images, commentBy: user.id };
-
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    post.comments.unshift(comment);
+    const images = await uploadToCloudinary({
+      files,
+      username: user.username,
+      postId,
+      commentId: commentId.toString(),
+    });
+
+    const comment = { _id: commentId, text, images, user: user.id, post: postId };
+    const newComment = await Comment.create(comment);
+
+    post.comments.unshift(comment._id);
     const savedPost = await post.save();
+
+
 
     res.status(200).json({ message: 'Comment created successfully', savedPost });
   } catch (error) {
@@ -201,21 +224,25 @@ export const createComment = async (req, res, next) => {
   }
 };
 
-export const deleteComment = async (res, req) => {
-  const { postId, commentId } = req.params;
+export const deleteComment = async (req, res) => {
+  const { id: postId, commentId } = req.params;
   const { id: userId } = req.user;
 
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate('comments');
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    const comment = post.comments.find((comment) => comment._id === commentId);
-    if (comment.commentBy != userId) {
+    const comment = post.comments.find(comment => {
+      return comment._id == commentId;
+    });
+    if (comment.user != userId || !comment) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    post.comments.filter(comment => comment._id != commentId ); // shallow comparison again. Should be fine for now.
+    post.comments.filter(comment => comment != commentId); // shallow comparison again. Should be fine for now.
     await post.save();
+
+    await Comment.deleteOne({ _id: commentId });
 
     res.status(200).json({ message: 'Comment deleted successfully', post });
   } catch (error) {

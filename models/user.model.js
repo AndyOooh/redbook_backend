@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { NODE_ENV } from '../config/VARS.js';
+import { Comment } from './comment.model.js';
 import { Post } from './post.model.js';
 import { Reaction } from './reaction.model.js';
 
@@ -7,13 +8,18 @@ const Schema = mongoose.Schema;
 const { ObjectId } = mongoose.Types;
 
 export const michaelScottId =
-  NODE_ENV === 'production' ? '63562c01ce1ae9ffd983face' : '6352bc4e6e4cd057299ec010';
+  NODE_ENV === 'production' ? '63562c01ce1ae9ffd983face' : '636640f8119c7b6d1bef933b';
 
 export const dwightId =
-  NODE_ENV === 'production' ? '6356325bce1ae9ffd983fb27' : '634948460ec050e4770551b3';
+  NODE_ENV === 'production' ? '6356325bce1ae9ffd983fb27' : '63663df3f09566819262c420';
 
 const userSchema = new Schema(
   {
+    full_name: {
+      type: String,
+      trim: true,
+      text: true,
+    },
     first_name: {
       type: String,
       required: [true, 'First name is required'],
@@ -31,6 +37,7 @@ const userSchema = new Schema(
       trim: true,
       text: true,
     },
+
     username: {
       type: String,
       required: [true, 'Username is required'],
@@ -59,6 +66,11 @@ const userSchema = new Schema(
           throw new Error('Password must be at least 99 characters');
         }
       },
+    },
+    theme: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'dark',
     },
     pictures: {
       type: Array,
@@ -111,37 +123,34 @@ const userSchema = new Schema(
       type: String,
     },
     friends: {
-      type: [String],
+      type: [ObjectId],
       ref: 'User',
       default: [michaelScottId],
     },
 
     followers: {
-      type: [String],
+      type: [ObjectId],
       ref: 'User',
       default: [michaelScottId, dwightId],
     },
     following: {
-      type: [String],
+      type: [ObjectId],
       ref: 'User',
       default: [michaelScottId],
     },
     requestsReceived: {
-      type: [String],
+      type: [ObjectId],
       ref: 'User',
       default: [dwightId],
     },
     requestsSent: {
-      type: [String],
+      type: [ObjectId],
       ref: 'User',
     },
-    // requestsSent: [{ type: String, ref: 'User' }], // This saves strings. The other option saves ObjectId(s)
     search: [
       {
-        user: {
-          type: ObjectId,
-          ref: 'User',
-        },
+        type: ObjectId,
+        ref: 'User',
       },
     ],
     bio: {
@@ -149,10 +158,6 @@ const userSchema = new Schema(
       default: '',
     },
     details: {
-      // nickName: {
-      //   type: String,
-      //   default: '',
-      // },
       workAndEducation: {
         work: {
           job: {
@@ -253,11 +258,15 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+// userSchema.index(first_name: 'text', last_name : 'text', username: 'text');
+
 userSchema.pre('deleteOne', function (next) {
   // userSchema.pre('deleteOne', { query: false, document: true }, function (next) {
   const userId = this._conditions._id;
   // Remove all the posts and reactions that reference (are created by) the removed person.
-  Post.deleteMany({ user: userId });
+  console.log('userId in user model pre: ', userId);
+  Comment.deleteMany({ user: userId }, next);
+  Post.deleteMany({ user: userId }, next);
   Reaction.deleteMany({ user: userId }, next);
 });
 
