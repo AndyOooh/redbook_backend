@@ -25,10 +25,6 @@ const upload = async (imagePath, folder) => {
 };
 
 export const uploadToCloudinary = async ({ files, file, username, type, postId, commentId }) => {
-  console.log('🚀 ~ file: cloudinary.service.js ~ line 28 ~ type', type);
-  console.log('files in uploadToCloudinary: ', files);
-  console.log('file in uploadToCloudinary: ', file);
-
   const numImages = files?.length;
 
   if (!numImages > 0 && !file) {
@@ -47,19 +43,14 @@ export const uploadToCloudinary = async ({ files, file, username, type, postId, 
     ? `${username}/cover`
     : ``;
 
-  console.log('🚀 ~ file: cloudinary.service.js ~ line 41 ~ folder', folder);
-
   let image;
   let images = [];
 
   try {
     if (file) {
-      console.log('single image');
-      // const uploadedImage = await upload(pathArray[0], folder);
       const uploadedImage = await upload(file.path, folder);
       image = { url: uploadedImage.secure_url, id: uploadedImage.asset_id };
     } else {
-      console.log('multiple images');
       const pathArray = files?.map(image => image.path);
       for (let i = 0; i < pathArray.length; i++) {
         const uploadedImages = await upload(pathArray[i], folder);
@@ -69,7 +60,5 @@ export const uploadToCloudinary = async ({ files, file, username, type, postId, 
   } catch (error) {
     console.log('error in uploadToCloudinary: ', error);
   }
-
-  console.log('🚀 ~ file: cloudinary.service.js ~ line 75 ~ image', image);
   return file ? image : images;
 };

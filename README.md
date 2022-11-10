@@ -7,8 +7,6 @@
   </a>
 </p>
 
-<!-- ### :link: [Link to front-end](https://github.com/AndyOooh/redbook_frontend) -->
-
 ## Links
 
 ### :link: [Front-end repo](https://github.com/AndyOooh/redbook_frontend)
