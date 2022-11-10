@@ -1,11 +1,9 @@
 import bcrypt from 'bcrypt';
-import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 
 import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../config/VARS.js';
 import { User } from '../models/user.model.js';
 import { Code } from '../models/code.model.js';
-
 import { sendEmail } from '../services/email.service.js';
 import { generateToken } from '../services/token.service.js';
 import {
@@ -14,7 +12,6 @@ import {
   resetCodeEmailOptions,
   verificationEmailOPtions,
 } from './auth.helpers.js';
-import { nameCase } from '../utils/helperFunctions.js';
 
 // ---------------------------------------- /logout ----------------------------------------
 // @desc Log a user out
@@ -53,11 +50,12 @@ export const refreshAccessToken = async (req, res) => {
     // secure: true
   });
 
-  const existingUser = await User.findOne({ refreshToken }).exec();
+  const existingUser = await User.findOne({ refreshToken })
+    .populate('friends', 'first_name last_name username pictures')
+    .exec();
 
   // Detected refresh token reuse!
   if (!existingUser) {
-    console.log('no user with this refresh token, token will be deleted');
     jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, decoded) => {
       if (err) return res.sendStatus(403); //Forbidden
       // Delete refresh tokens of hacked user
@@ -80,7 +78,6 @@ export const refreshAccessToken = async (req, res) => {
       existingUser.refreshToken = '';
       const result = await existingUser.save();
     }
-    console.log('in refreshAccessToken, decoded refresh:', decoded);
     if (err || existingUser.email !== decoded.email) return res.sendStatus(403);
 
     // Refresh token was still valid
@@ -112,8 +109,6 @@ export const refreshAccessToken = async (req, res) => {
 // @route POST /api/auth/login
 // @access Public
 export const login = async (req, res, next) => {
-  console.log('in login req.body:', req.body);
-
   const { email, password: loginPassword } = req.body;
   if (!email || !loginPassword) {
     const error = new Error('All fields are required');
@@ -121,10 +116,13 @@ export const login = async (req, res, next) => {
     return next(error);
   }
   try {
-    const existingUser = await User.findOne({ email }).select(' -createdAt -updatedAt -__v');
+    // const existingUser = await User.findOne({ email }).select(' -createdAt -updatedAt -__v');
+    const existingUser = await User.findOne({ email })
+      .populate('friends', 'first_name last_name username pictures')
+      .select(' -createdAt -updatedAt -__v');
 
     if (!existingUser) {
-      const error = new Error('User not found');
+      const error = new Error('Wrong credentials');
       error.statusCode = 404;
       return next(error);
     }
@@ -134,13 +132,12 @@ export const login = async (req, res, next) => {
 
     const isMatch = await bcrypt.compare(loginPassword, password);
     if (!isMatch) {
-      const error = new Error('Invalid password');
+      const error = new Error('Wrong credentials');
       error.statusCode = 400;
       return next(error);
     }
 
     const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
-    console.log('🚀 ~ file: auth.controller.js ~ line 220 ~ newRefreshToken', newRefreshToken);
     const newAccessToken = generateToken(
       { email, id, username: existingUser.username },
       ACCESS_TOKEN_SECRET,
@@ -172,13 +169,11 @@ export const login = async (req, res, next) => {
 // @route POST /api/auth/verify
 // @access Private
 export const verify = async (req, res, next) => {
-  console.log('req.user in verifyAccount', req.user);
   const userId = req.user.id;
   const verificationToken = req.params.token;
 
   try {
     const decodedToken = await jwt.verify(verificationToken, REFRESH_TOKEN_SECRET);
-    console.log('decoded', decodedToken);
     if (decodedToken.id !== userId) {
       const error = new Error('You are not uthorized to verify this account');
       error.statusCode = 401;
@@ -187,7 +182,6 @@ export const verify = async (req, res, next) => {
     }
 
     const user = await User.findById(decodedToken.id);
-    console.log('user in verify: ', user);
     if (user?.verified) {
       const error = new Error('This account is already verified');
       error.statusCode = 400;
@@ -207,7 +201,6 @@ export const verify = async (req, res, next) => {
 // @route POST /api/auth/resendverify
 // @access Private
 export const resendVerificationEmail = async (req, res, next) => {
-  console.log('req.user in resendVerificationEmail666666', req.user);
   try {
     const { id } = req.user;
     const { email, first_name, verified } = await User.findById(id);
@@ -230,10 +223,8 @@ export const resendVerificationEmail = async (req, res, next) => {
 
 export const sendResetPasswordCode = async (req, res, next) => {
   const { email } = req.body;
-  console.log('email in sendResetPasswordCode: ', email);
   try {
     const user = await User.findOne({ email }).select('-password');
-    console.log('user in sendResetPasswordCode: ', user);
     const code = generateCode(5);
     const newCode = await Code.findOneAndUpdate(
       { user: user._id },

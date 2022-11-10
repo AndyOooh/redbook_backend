@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import { validationResult } from 'express-validator';
-// import jwt from 'jsonwebtoken';
 
 import { dwightId, michaelScottId, User } from '../models/user.model.js';
 import { Post } from '../models/post.model.js';
@@ -39,8 +38,9 @@ export const createUser = async (req, res, next) => {
   const newRefreshToken = generateToken({ email }, REFRESH_TOKEN_SECRET, '7d');
 
   // Save user to database
+  let createdUser;
   try {
-    const createdUser = await User.create({
+    createdUser = await User.create({
       ...req.body,
       full_name: `${first_name_cased} ${last_name_cased}`,
       username: first_name + last_name + Math.random().toString(),
@@ -48,7 +48,7 @@ export const createUser = async (req, res, next) => {
       refreshToken: newRefreshToken,
     });
 
-    console.log('createdUser: ', createdUser);
+    await createdUser.populate('friends', 'first_name last_name username pictures');
 
     const { id, rest } = createUserObject(createdUser._doc);
 
@@ -97,7 +97,6 @@ export const createUser = async (req, res, next) => {
       accessToken: newAccessToken,
     });
   } catch (error) {
-    console.log('in register, error:', error);
     // delete user in db if verification email failed?
     return next(error);
   }
@@ -110,7 +109,6 @@ export const getUser = async (req, res, next) => {
   const { username } = req.params;
   const { type } = req.query;
   const { id: userId } = req.user;
-  console.log('🚀 ~ file: users.controller.js ~ line 115 ~ username', username);
 
   try {
     let user;
@@ -143,7 +141,6 @@ export const getUser = async (req, res, next) => {
     }
     res.status(200).json(user);
   } catch (error) {
-    console.log('error in getUser: ', error);
     next(error);
   }
 };
@@ -184,7 +181,6 @@ export const updateProfilePhoto = async (req, res, next) => {
       picsToReturn = updatedUser[field];
     } else if (image) {
       const uploadedImage = await uploadToCloudinary({ file: image, username, type: type });
-      console.log('🚀 ~ file: users.controller.js ~ line 123 ~ uploadedImage', uploadedImage);
       const imageToStore = { ...uploadedImage, usedBefore: true };
       const updatedUser = await User.findByIdAndUpdate(
         id,
@@ -200,9 +196,7 @@ export const updateProfilePhoto = async (req, res, next) => {
       return res.status(400).json({ message: 'No image found in request' });
     }
     return res.status(200).json(picsToReturn);
-  } catch (error) {
-    console.log('🚀 ~ file: users.controller.js ~ line 99 ~ updateProfilePhoto ~ error', error);
-  }
+  } catch (error) {}
 };
 
 // @desc update a user document
@@ -211,8 +205,7 @@ export const updateProfilePhoto = async (req, res, next) => {
 export const updateUser = async (req, res) => {
   const { id } = req.user;
   const { id: profileUserId } = req.params;
-  console.log('🚀 ~ file: users.controller.js ~ line 214 ~ profileUserId', profileUserId, typeof profileUserId);
-  console.log('req.body', req.body);
+  const { path, isArray } = req.query; // isArray is a string and must be true if field to update is an array
 
   if (profileUserId != 'undefined' && profileUserId != id) {
     return res.status(401).json({
@@ -223,26 +216,17 @@ export const updateUser = async (req, res) => {
   let user = await User.findById(id).exec();
   if (!user) return res.status(404).json({ message: 'User not found' });
 
-  const { path, isArray } = req.query;
-
   try {
     if (!path || path === '' || path === 'undefined') {
       let [field, value] = Object.entries(req.body)[0];
       if (isArray === 'true') {
-        console.log('is array, no path ******************************');
-        // user.update({ $addToSet: { field: value } });
-        // user.updateOne({ $push: { [field]: value } });
-        // user.updateOne({ $push: { search: 'akkaka' } });
-        // user[field] = [value, ...user[field]];
         const updatedUser = await User.findByIdAndUpdate(
           id,
           { $addToSet: { [field]: value } },
           { new: true }
         ).exec();
-        console.log('🚀 ~ file: users.controller.js ~ line 240 ~ updatedUser', updatedUser);
         return res.status(200).json({ message: 'User updated successfully', updatedUser });
       } else {
-        console.log('in else');
         user[field] = value;
       }
     } else {
@@ -251,11 +235,8 @@ export const updateUser = async (req, res) => {
     }
     await user.save();
     return res.status(200).json({ message: 'User updated successfully', user }); // Maybe just send back fields that were updated? frontend can handle this.
-
-    // return res.status(200).json({ message: 'User updated successfully', user }); // Maye just send back fields that were updated? frontend can handle this.
   } catch (error) {
     res.status(400).json({ message: 'Error updating user', error });
-    console.log('error', error);
   }
 };
 
@@ -286,7 +267,6 @@ export const friendRequest = async (req, res, next) => {
         ? "You can't unfollow yourself"
         : null;
     return res.status(400).json({ message: message });
-    console.log('sent to self***********');
   }
 
   try {
@@ -324,7 +304,6 @@ export const friendRequest = async (req, res, next) => {
         !receiver.followers?.includes(senderId) && receiver.followers?.push(senderId); // should check of already there.
         receiver.requestsSent?.pull(senderId);
         receiver.friends?.push(senderId);
-        console.log('🚀 ~ file: users.controller.js ~ line 208 ~ receiver', receiver);
         await receiver.save();
 
         // only because we add a friend:
@@ -422,7 +401,6 @@ export const friendRequest = async (req, res, next) => {
 
     res.status(200).json({ message: message, data: { sender, receiver } });
   } catch (error) {
-    console.log('🚀users.controller.js ~ line 303 ~ error', error);
     res.json({ error: error });
   }
 };
@@ -437,15 +415,12 @@ export const deleteUser = async (req, res) => {
     res.clearCookie('refresh_token', { httpOnly: true });
     res.status(200).json({ message: `User ${userId} deleted`, data: user });
   } catch (error) {
-    console.log('🚀 ~ file: users.controller.js ~ line 310 ~ error', error);
     res.status(500).json({ message: 'Error deleting user', error: error });
   }
 };
 
 export const searchUserName = async (req, res) => {
-  console.log('in searchUsers************************');
   const { term } = req.query;
-  console.log('🚀 ~ file: users.controller.js ~ line 421 ~ term', term);
   try {
     const users = await User.aggregate([
       {
@@ -482,11 +457,8 @@ export const searchUserName = async (req, res) => {
         },
       },
     ]);
-    console.log('🚀 ~ file: users.controller.js ~ line 441 ~ users', users);
-    // res.status(200).json({ message: 'Search complete', users });
     res.status(200).json(users);
   } catch (error) {
-    console.log('🚀 ~ file: users.controller.js ~ line 310 ~ error', error);
     res.status(500).json({ message: 'Error searching users', error: error });
   }
 };
@@ -505,10 +477,8 @@ export const getUsers = async (req, res, next) => {
     } else {
       users = await User.find({ search }); // not finished.
     }
-    console.log('🚀 ~ file: users.controller.js ~ line 507 ~ users', users);
     res.status(200).json(users);
   } catch (error) {
-    console.log('🚀 ~ file: users.controller.js ~ line 503 ~ error', error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };

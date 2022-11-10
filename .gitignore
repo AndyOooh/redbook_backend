@@ -6,6 +6,7 @@
 .env.local
 .env.production
 nodemon.json
+README copy.md
 
 # Logs
 logs

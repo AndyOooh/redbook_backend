@@ -40,7 +40,7 @@ This project is an imitation of Facebook without the full suite of features face
    2. Upload pofile- and cover images, update your bio and other details, create posts, comment, like, request/accept friendships.
 
 ### Clone the repo
-NB: This is not a mono-repo. See [links](#links) for the other repo.
+NB: This is not a mono-repo. See [links](#links) for the frontend/backend.
 
 #### Prerequisites for running the app
 - Node.js v15.x or higher.
@@ -81,9 +81,10 @@ npm start
 - [x] Post creation with images, background and emojis.
 - [x] Post comments and reaction-emojis.
 - [x] Image uploads, including crop, resize and drag/drop.
-- [x] Profile updates including bio, work, eductaion, relationship status and more.
+- [x] Profile updates including bio, work, education, relationship status and more.
 - [x] Friend requests: send, cancel, accept, reject, follow, unfollow.
-- [ ] Profile search.
+- [x] Search other users and search history.
+- [x] Light/dark color theme.
 - [ ] Notifications.
 - [ ] Messaging.
 
