@@ -33,6 +33,11 @@ This project is an imitation of Facebook without the full suite of features face
 
 ## Usage
 
+## NEW: Start container on EC2
+```
+sudo docker run -d --rm -p 80:80 -e 'PORT=80' andyohhh/redbook
+```
+
 ### Check out the live [demo](www.theredbook.xyz)
    1. Create a user with your own or a [throw-away email](https://temp-mail.org/en/).
    2. Upload pofile- and cover images, update your bio and other details, create posts, comment, like, request/accept friendships.

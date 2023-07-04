@@ -15,6 +15,11 @@ console.log('in auth.routes.js');
 
 const router = express.Router();
 
+router.get('/', (req, res) => {
+  console.log('Ping, it works!');
+  res.send('auth routes');
+});
+
 router.post('/login', login);
 router.post('/logout', logout);
 
