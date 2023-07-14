@@ -1,0 +1,21 @@
+# Only to be run on remote machine
+
+version: '3.8'
+
+services:
+  nginx-proxy:
+    image: andyohhh/redbook-nginx
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - nodejs-app
+
+  nodejs-app:
+    image: andyohhh/redbook-node
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - .env:/app/.env

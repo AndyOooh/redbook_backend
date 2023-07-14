@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { DB_NAME_DEV, DB_NAME_PROD, DB_PASSWORD, DB_USER, NODE_ENV } from './VARS.js';
 
+mongoose.set('strictQuery', true); // advised by prompt in console
 const db_name = NODE_ENV === 'production' ? DB_NAME_PROD : DB_NAME_DEV;
 
 const MONGO_URI = `mongodb+srv://${DB_USER}:${DB_PASSWORD}@cluster0.gnahzx2.mongodb.net/${db_name}?retryWrites=true&w=majority`;

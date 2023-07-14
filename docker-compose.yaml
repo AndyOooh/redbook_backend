@@ -2,8 +2,28 @@ version: '3.8'
 
 services:
   node:
-    build: ./
+    build: 
+      context: ./nodejs
+      dockerfile: Dockerfile
+    image: local-redbook-node
+    ports:
+      - 3000:3000
+    volumes:
+      - ./nodejs/node_modules:/app/node_modules
+    env_file:
+      - ./nodejs/.env
+
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: local-redbook-nginx
+    restart: always
     ports:
       - 80:80
-    env_file:
-      - .env
+      - 443:443
+    # volumes:
+    #   - ./nginx/conf.d:/etc/nginx/conf.d
+    #   - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - node

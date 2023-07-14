@@ -10,6 +10,7 @@ import apiRoutes from './routes/index.routes.js';
 import morgan from 'morgan';
 
 const app = express();
+console.log('🚀  file: server.js:8  PORT:', PORT)
 
 app.use(cors(corsConfig));
 app.use(morgan(LOG_SETTING));
